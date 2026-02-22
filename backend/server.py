@@ -156,7 +156,12 @@ def detect_file_type(filename: str) -> str:
 async def analyze_with_gemini(file_path: str, file_type: str, filename: str, language: str = "en") -> dict:
     """Analyze a file using Gemini to detect if it's fake/AI-generated"""
     try:
-        lang_instruction = "يجب أن تكون جميع النصوص في الاستجابة باللغة العربية." if language == "ar" else "All text in the response must be in English."
+        if language == "ar":
+            lang_instruction = """CRITICAL LANGUAGE RULE: You MUST write ALL text values in the JSON response in Arabic (العربية). 
+Every single string value - summary, indicator names, descriptions, findings, forensic notes, recommendations - MUST be in Arabic. 
+The JSON keys remain in English but ALL values must be Arabic text. This is mandatory. Do not use English for any text value."""
+        else:
+            lang_instruction = "All text values in the JSON response must be in English."
 
         system_prompt = f"""You are a world-class digital forensics expert specializing in deepfake detection and media authenticity verification. You work at a leading digital forensics laboratory.
 
