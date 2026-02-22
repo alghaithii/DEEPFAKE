@@ -318,8 +318,7 @@ async def get_analysis(analysis_id: str, user: dict = Depends(get_current_user))
     return analysis
 
 @api_router.delete("/analysis/{analysis_id}")
-async def delete_analysis(analysis_id: str, authorization: str = ""):
-    user = await get_current_user(authorization)
+async def delete_analysis(analysis_id: str, user: dict = Depends(get_current_user)):
     result = await db.analyses.delete_one({"id": analysis_id, "user_id": user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Analysis not found")
