@@ -878,6 +878,21 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
         elements.append(Paragraph(fn_title, heading_ar))
         elements.append(Paragraph(shape_ar(forensic_notes) if is_arabic else forensic_notes, normal_ar))
 
+    # Annotations detail list
+    annotations_list = details.get("annotations", [])
+    if annotations_list:
+        ann_title = shape_ar("التعليقات التوضيحية") if is_arabic else "Annotation Details"
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph(ann_title, heading_ar))
+        for idx, ann in enumerate(annotations_list):
+            sev = ann.get('severity', 'low')
+            severity_color = {'high': '#C53030', 'medium': '#C05621', 'low': '#2F855A'}.get(sev, '#575752')
+            ann_label = shape_ar(ann.get('label', '')) if is_arabic else ann.get('label', '')
+            ann_desc = shape_ar(ann.get('description', '')) if is_arabic else ann.get('description', '')
+            ann_text = f"<b>[{idx + 1}] {ann_label}</b> ({ann.get('region', 'N/A')} - {sev.upper()}): {ann_desc}"
+            elements.append(Paragraph(ann_text, ParagraphStyle('Ann', parent=normal_ar, textColor=colors.HexColor(severity_color))))
+            elements.append(Spacer(1, 4))
+
     # Recommendation
     rec = details.get("recommendation", "")
     if rec:
