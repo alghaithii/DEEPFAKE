@@ -166,8 +166,8 @@ export default function AnalysisDetailPage() {
         </div>
       </div>
 
-      {/* Annotated Image */}
-      <AnnotatedImage preview={analysis.preview} annotations={details.annotations} fileType={analysis.file_type} mimeGuess={analysis.file_name?.split('.').pop()} />
+      {/* Annotated Image/Video/Audio */}
+      <AnnotatedImage preview={analysis.preview} annotations={details.annotations} fileType={analysis.file_type} mimeGuess={analysis.file_name?.split('.').pop()} previewType={analysis.preview_type} mediaDuration={analysis.media_duration} />
 
       {/* Analysis Stages */}
       {details.analysis_stages?.length > 0 && (
