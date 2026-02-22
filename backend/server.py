@@ -9,6 +9,8 @@ import io
 import json
 import tempfile
 import asyncio
+import base64
+import hashlib
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -16,6 +18,7 @@ import uuid
 from datetime import datetime, timezone
 import bcrypt
 import jwt
+import httpx
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
 
