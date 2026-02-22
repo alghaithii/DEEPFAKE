@@ -11,6 +11,9 @@ import tempfile
 import asyncio
 import base64
 import hashlib
+import subprocess
+import struct
+import wave
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -19,6 +22,7 @@ from datetime import datetime, timezone
 import bcrypt
 import jwt
 import httpx
+from PIL import Image as PILImage, ImageDraw
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
 
