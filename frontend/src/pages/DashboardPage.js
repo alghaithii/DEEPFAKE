@@ -27,7 +27,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-  }, [API, authHeaders]);
+  }, []);
 
   const getVerdictStyle = (verdict) => {
     switch (verdict) {
