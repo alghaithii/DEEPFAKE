@@ -347,26 +347,48 @@ class DeepfakeDetectorAPITester:
         )
         return success
 
-    def test_generate_pdf_report(self):
-        """Test PDF report generation"""
-        if not hasattr(self, 'analysis_id') or not self.analysis_id:
-            print("   ⚠️ No analysis ID available, skipping test")
+    def test_generate_pdf_report_english(self):
+        """Test PDF report generation for English analysis"""
+        if not hasattr(self, 'analysis_id_en') or not self.analysis_id_en:
+            print("   ⚠️ No English analysis ID available, skipping test")
             return False
             
-        print(f"\n🔍 Testing PDF Report Generation...")
-        url = f"{self.api_url}/analysis/{self.analysis_id}/report"
+        print(f"\n🔍 Testing PDF Report Generation (English)...")
+        url = f"{self.api_url}/analysis/{self.analysis_id_en}/report"
         headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
         
         try:
             response = requests.get(url, headers=headers)
             success = response.status_code == 200 and 'application/pdf' in response.headers.get('content-type', '')
             
-            self.log_test("PDF Report Generation", success, response.status_code,
+            self.log_test("PDF Report Generation (English)", success, response.status_code,
                          "PDF content received" if success else f"Expected PDF, got {response.headers.get('content-type')}")
             return success
             
         except Exception as e:
-            self.log_test("PDF Report Generation", False, "ERROR", f"Exception: {str(e)}")
+            self.log_test("PDF Report Generation (English)", False, "ERROR", f"Exception: {str(e)}")
+            return False
+
+    def test_generate_pdf_report_arabic(self):
+        """Test PDF report generation for Arabic analysis"""
+        if not hasattr(self, 'analysis_id_ar') or not self.analysis_id_ar:
+            print("   ⚠️ No Arabic analysis ID available, skipping test")
+            return False
+            
+        print(f"\n🔍 Testing PDF Report Generation (Arabic)...")
+        url = f"{self.api_url}/analysis/{self.analysis_id_ar}/report"
+        headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            success = response.status_code == 200 and 'application/pdf' in response.headers.get('content-type', '')
+            
+            self.log_test("PDF Report Generation (Arabic)", success, response.status_code,
+                         "PDF content received" if success else f"Expected PDF, got {response.headers.get('content-type')}")
+            return success
+            
+        except Exception as e:
+            self.log_test("PDF Report Generation (Arabic)", False, "ERROR", f"Exception: {str(e)}")
             return False
 
     def test_delete_analysis(self):
