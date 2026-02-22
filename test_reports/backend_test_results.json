@@ -1,0 +1,51 @@
+[
+  {
+    "test_name": "Root API Endpoint",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T12:53:13.734498"
+  },
+  {
+    "test_name": "User Login (existing test user)",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T12:53:14.068198"
+  },
+  {
+    "test_name": "Get Current User",
+    "status": "FAIL",
+    "response_code": 401,
+    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
+    "timestamp": "2026-02-22T12:53:14.213950"
+  },
+  {
+    "test_name": "Get Analysis Stats",
+    "status": "FAIL",
+    "response_code": 401,
+    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
+    "timestamp": "2026-02-22T12:53:14.360269"
+  },
+  {
+    "test_name": "Get Analysis History",
+    "status": "FAIL",
+    "response_code": 401,
+    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
+    "timestamp": "2026-02-22T12:53:14.516206"
+  },
+  {
+    "test_name": "File Upload & Analysis",
+    "status": "FAIL",
+    "response_code": 401,
+    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
+    "timestamp": "2026-02-22T12:53:14.640959"
+  },
+  {
+    "test_name": "Compare Analyses (expected to fail - insufficient data)",
+    "status": "FAIL",
+    "response_code": 401,
+    "details": "Expected 400, got response: {'detail': 'Not authenticated'}",
+    "timestamp": "2026-02-22T12:53:14.738786"
+  }
+]
