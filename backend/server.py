@@ -194,7 +194,7 @@ Analyze thoroughly for:
             api_key=GEMINI_API_KEY,
             session_id=f"analysis-{uuid.uuid4()}",
             system_message=system_prompt
-        ).with_model("gemini", "gemini-2.5-flash-preview-04-17")
+        ).with_model("gemini", "gemini-1.5-flash")
 
         mime_type = get_mime_type(file_type, filename)
         file_content = FileContentWithMimeType(file_path=file_path, mime_type=mime_type)
