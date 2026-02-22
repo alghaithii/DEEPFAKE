@@ -268,6 +268,14 @@ Respond with ONLY a valid JSON object:
             "category": "metadata" or "structural" or "ai_pattern" or "temporal" or "spectral" or "behavioral"
         }}
     ],
+    "annotations": [
+        {{
+            "region": "top-left" or "top-center" or "top-right" or "center-left" or "center" or "center-right" or "bottom-left" or "bottom-center" or "bottom-right",
+            "label": "short label (e.g. Hair anomaly, Eye reflection, Skin texture)",
+            "description": "what is wrong in this specific area",
+            "severity": "low" or "medium" or "high"
+        }}
+    ],
     "technical_details": {{
         "artifacts_found": ["specific artifacts with locations"],
         "consistency_score": number 0-100,
@@ -277,7 +285,9 @@ Respond with ONLY a valid JSON object:
     }},
     "forensic_notes": "expert-level technical observations - be very specific about what evidence supports your verdict",
     "recommendation": "actionable recommendation"
-}}"""
+}}
+
+IMPORTANT for annotations: You MUST provide at least 3-6 annotations pointing to SPECIFIC regions of the image/video/audio where you found issues or verified authenticity. Each annotation should reference a precise region and explain what you found there."""
 
         lang_reminder = "IMPORTANT: Respond with ALL text values in Arabic (العربية)." if language == "ar" else ""
 
