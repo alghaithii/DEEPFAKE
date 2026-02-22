@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Shield, ShieldAlert, ShieldQuestion, ArrowLeft, Download, Trash2, FileText } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldQuestion, ArrowLeft, Download, Trash2, FileText, CheckCircle, AlertTriangle, XCircle, Fingerprint } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
 
 export default function AnalysisDetailPage() {
   const { id } = useParams();
-  const { t, lang, authHeaders, token, API } = useAuth();
+  const { t, lang, authHeaders, API } = useAuth();
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,7 @@ export default function AnalysisDetailPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `analysis-report-${id.slice(0, 8)}.pdf`);
+      link.setAttribute('download', `truthlens-report-${id.slice(0, 8)}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -70,45 +70,31 @@ export default function AnalysisDetailPage() {
   if (!analysis) return null;
 
   const details = analysis.details || {};
-  const getVerdictStyle = (verdict) => {
+  const getVerdictConfig = (verdict) => {
     switch (verdict) {
-      case 'authentic': return { bg: 'bg-[#2F855A]', light: 'bg-[#2F855A]/10', text: 'text-[#2F855A]', label: t('authentic'), icon: <Shield className="w-8 h-8" /> };
-      case 'suspicious': return { bg: 'bg-[#C05621]', light: 'bg-[#C05621]/10', text: 'text-[#C05621]', label: t('suspicious'), icon: <ShieldQuestion className="w-8 h-8" /> };
-      case 'likely_fake': return { bg: 'bg-[#C53030]', light: 'bg-[#C53030]/10', text: 'text-[#C53030]', label: t('likely_fake'), icon: <ShieldAlert className="w-8 h-8" /> };
-      default: return { bg: 'bg-[#858580]', light: 'bg-[#858580]/10', text: 'text-[#858580]', label: verdict, icon: <Shield className="w-8 h-8" /> };
+      case 'authentic': return { bg: 'bg-[#2F855A]', light: 'bg-[#2F855A]/10', border: 'border-[#2F855A]/30', text: 'text-[#2F855A]', label: t('authentic'), icon: <Shield className="w-8 h-8" />, ring: 'ring-[#2F855A]/20' };
+      case 'suspicious': return { bg: 'bg-[#C05621]', light: 'bg-[#C05621]/10', border: 'border-[#C05621]/30', text: 'text-[#C05621]', label: t('suspicious'), icon: <ShieldQuestion className="w-8 h-8" />, ring: 'ring-[#C05621]/20' };
+      case 'likely_fake': return { bg: 'bg-[#C53030]', light: 'bg-[#C53030]/10', border: 'border-[#C53030]/30', text: 'text-[#C53030]', label: t('likely_fake'), icon: <ShieldAlert className="w-8 h-8" />, ring: 'ring-[#C53030]/20' };
+      default: return { bg: 'bg-[#858580]', light: 'bg-[#858580]/10', border: 'border-[#858580]/30', text: 'text-[#858580]', label: verdict, icon: <Shield className="w-8 h-8" />, ring: 'ring-[#858580]/20' };
     }
   };
 
-  const vs = getVerdictStyle(analysis.verdict);
+  const vc = getVerdictConfig(analysis.verdict);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in" data-testid="analysis-detail-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm text-[#858580] hover:text-[#1A1A18] transition-colors"
-          data-testid="back-btn"
-        >
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-[#858580] hover:text-[#1A1A18] transition-colors" data-testid="back-btn">
           <ArrowLeft className={`w-4 h-4 ${lang === 'ar' ? 'rotate-180' : ''}`} />
           {t('backToDashboard')}
         </button>
         <div className="flex gap-2">
-          <Button
-            onClick={downloadReport}
-            variant="outline"
-            className="rounded-full border-[#DADAD5] text-[#575752] hover:bg-[#EAEAE5] gap-2"
-            data-testid="download-report-btn"
-          >
+          <Button onClick={downloadReport} variant="outline" className="rounded-full border-[#DADAD5] text-[#575752] hover:bg-[#EAEAE5] gap-2" data-testid="download-report-btn">
             <Download className="w-4 h-4" />
             {t('downloadReport')}
           </Button>
-          <Button
-            onClick={deleteAndGoBack}
-            variant="outline"
-            className="rounded-full border-[#C53030]/20 text-[#C53030] hover:bg-[#C53030]/10 gap-2"
-            data-testid="delete-analysis-btn"
-          >
+          <Button onClick={deleteAndGoBack} variant="outline" className="rounded-full border-[#C53030]/20 text-[#C53030] hover:bg-[#C53030]/10 gap-2" data-testid="delete-analysis-btn">
             <Trash2 className="w-4 h-4" />
             {t('deleteAnalysis')}
           </Button>
@@ -123,7 +109,7 @@ export default function AnalysisDetailPage() {
           </div>
           <div>
             <h2 className="text-lg font-medium text-[#1A1A18]">{analysis.file_name}</h2>
-            <div className="flex items-center gap-3 text-xs text-[#858580] mt-1">
+            <div className="flex items-center gap-3 text-xs text-[#858580] mt-1 flex-wrap">
               <span>{analysis.file_type}</span>
               <span>&middot;</span>
               <span>{analysis.file_size ? `${(analysis.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</span>
@@ -134,25 +120,63 @@ export default function AnalysisDetailPage() {
         </div>
       </div>
 
-      {/* Verdict */}
-      <div className={`${vs.light} rounded-2xl border border-[#DADAD5] p-8`} data-testid="detail-verdict-card">
-        <div className="flex items-center justify-between">
+      {/* Verdict with Gauge */}
+      <div className={`${vc.light} rounded-2xl border ${vc.border} p-8 ring-4 ${vc.ring}`} data-testid="detail-verdict-card">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className={`w-16 h-16 rounded-2xl ${vs.bg} text-white flex items-center justify-center`}>
-              {vs.icon}
+            <div className={`w-16 h-16 rounded-2xl ${vc.bg} text-white flex items-center justify-center shadow-lg`}>
+              {vc.icon}
             </div>
             <div>
-              <div className="text-sm text-[#858580] uppercase tracking-wider">{t('verdict')}</div>
-              <div className={`text-3xl font-medium ${vs.text}`}>{vs.label}</div>
+              <div className="text-xs text-[#858580] uppercase tracking-widest">{t('verdict')}</div>
+              <div className={`text-3xl font-medium ${vc.text}`}>{vc.label}</div>
             </div>
           </div>
-          <div className="text-end">
-            <div className="text-sm text-[#858580]">{t('confidence')}</div>
-            <div className="text-4xl font-light text-[#1A1A18]">{analysis.confidence}%</div>
-            <Progress value={analysis.confidence} className="h-2 w-32 mt-2 bg-[#EAEAE5]" />
+          <div className="flex flex-col items-center">
+            <div className="relative w-32 h-16 overflow-hidden">
+              <svg viewBox="0 0 120 60" className="w-full h-full">
+                <path d="M 10 55 A 50 50 0 0 1 110 55" fill="none" stroke="#DADAD5" strokeWidth="8" strokeLinecap="round" />
+                <path d="M 10 55 A 50 50 0 0 1 110 55" fill="none"
+                  stroke={analysis.verdict === 'authentic' ? '#2F855A' : analysis.verdict === 'suspicious' ? '#C05621' : '#C53030'}
+                  strokeWidth="8" strokeLinecap="round"
+                  strokeDasharray={`${(analysis.confidence / 100) * 157} 157`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-end justify-center pb-0">
+                <span className="text-2xl font-light text-[#1A1A18]">{analysis.confidence}%</span>
+              </div>
+            </div>
+            <span className="text-xs text-[#858580] mt-1">{t('confidence')}</span>
           </div>
         </div>
       </div>
+
+      {/* Analysis Stages Pipeline */}
+      {details.analysis_stages?.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#DADAD5] p-6" data-testid="detail-stages">
+          <h3 className="text-sm font-medium text-[#858580] uppercase tracking-wider mb-4">
+            {lang === 'ar' ? 'مراحل التحليل الجنائي' : 'Forensic Analysis Pipeline'}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {details.analysis_stages.map((stage, i) => {
+              const sc = {
+                pass: { icon: <CheckCircle className="w-4 h-4" />, bg: 'bg-[#2F855A]/10', text: 'text-[#2F855A]', border: 'border-[#2F855A]/20' },
+                warning: { icon: <AlertTriangle className="w-4 h-4" />, bg: 'bg-[#C05621]/10', text: 'text-[#C05621]', border: 'border-[#C05621]/20' },
+                fail: { icon: <XCircle className="w-4 h-4" />, bg: 'bg-[#C53030]/10', text: 'text-[#C53030]', border: 'border-[#C53030]/20' },
+              }[stage.status] || { icon: <Shield className="w-4 h-4" />, bg: 'bg-[#858580]/10', text: 'text-[#858580]', border: 'border-[#858580]/20' };
+              return (
+                <div key={i} className={`${sc.bg} ${sc.text} rounded-xl border ${sc.border} p-4`} data-testid={`detail-stage-${i}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {sc.icon}
+                    <span className="text-sm font-medium">{stage.stage}</span>
+                  </div>
+                  <p className="text-xs opacity-80 mt-1">{stage.finding}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       <div className="bg-white rounded-xl border border-[#DADAD5] p-6" data-testid="detail-summary">
@@ -171,7 +195,10 @@ export default function AnalysisDetailPage() {
                 <div key={i} className={`p-4 rounded-xl border ${severityColor}`} data-testid={`detail-indicator-${i}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium">{ind.name}</span>
-                    <span className="text-xs font-medium uppercase">{ind.severity}</span>
+                    <div className="flex items-center gap-2">
+                      {ind.category && <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/50">{ind.category}</span>}
+                      <span className="text-xs font-medium uppercase">{ind.severity}</span>
+                    </div>
                   </div>
                   <p className="text-xs opacity-80">{ind.description}</p>
                 </div>
@@ -185,26 +212,46 @@ export default function AnalysisDetailPage() {
       {details.technical_details && (
         <div className="bg-white rounded-xl border border-[#DADAD5] p-6" data-testid="detail-technical">
           <h3 className="text-sm font-medium text-[#858580] uppercase tracking-wider mb-4">{t('technicalDetails')}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-[#F5F5F0]">
               <div className="text-xs text-[#858580] mb-1">{t('consistencyScore')}</div>
               <div className="text-xl font-light text-[#1A1A18]">{details.technical_details.consistency_score ?? 'N/A'}%</div>
               <Progress value={details.technical_details.consistency_score || 0} className="h-1.5 mt-2 bg-[#DADAD5]" />
             </div>
             <div className="p-4 rounded-xl bg-[#F5F5F0]">
-              <div className="text-xs text-[#858580] mb-1">{t('artifactsFound')}</div>
-              <div className="text-xl font-light text-[#1A1A18]">{details.technical_details.artifacts_found?.length || 0}</div>
-              <div className="mt-2 space-y-1">
-                {details.technical_details.artifacts_found?.slice(0, 3).map((a, i) => (
-                  <span key={i} className="inline-block text-xs bg-white px-2 py-0.5 rounded me-1">{a}</span>
-                ))}
-              </div>
+              <div className="text-xs text-[#858580] mb-1">{lang === 'ar' ? 'معلومات التنسيق' : 'Format Info'}</div>
+              <p className="text-sm text-[#575752]">{details.technical_details.format_info || 'N/A'}</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[#F5F5F0]">
+              <div className="text-xs text-[#858580] mb-1">{lang === 'ar' ? 'تقييم الجودة' : 'Quality Assessment'}</div>
+              <p className="text-sm text-[#575752]">{details.technical_details.quality_assessment || 'N/A'}</p>
             </div>
             <div className="p-4 rounded-xl bg-[#F5F5F0]">
               <div className="text-xs text-[#858580] mb-1">{t('metadataAnalysis')}</div>
-              <p className="text-xs text-[#575752] leading-relaxed">{details.technical_details.metadata_analysis || 'N/A'}</p>
+              <p className="text-sm text-[#575752]">{details.technical_details.metadata_analysis || 'N/A'}</p>
             </div>
           </div>
+          {details.technical_details.artifacts_found?.length > 0 && (
+            <div className="mt-4 p-4 rounded-xl bg-[#F5F5F0]">
+              <div className="text-xs text-[#858580] mb-2">{t('artifactsFound')}</div>
+              <div className="flex flex-wrap gap-2">
+                {details.technical_details.artifacts_found.map((a, i) => (
+                  <span key={i} className="text-xs bg-white px-3 py-1 rounded-full border border-[#DADAD5] text-[#575752]">{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Forensic Notes */}
+      {details.forensic_notes && (
+        <div className="bg-[#1A1A18] rounded-xl p-6 text-[#F5F5F0]" data-testid="detail-forensic-notes">
+          <h3 className="text-sm font-medium text-[#858580] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Fingerprint className="w-4 h-4" />
+            {lang === 'ar' ? 'ملاحظات جنائية متقدمة' : 'Advanced Forensic Notes'}
+          </h3>
+          <p className="text-sm text-[#EAEAE5] leading-relaxed font-mono">{details.forensic_notes}</p>
         </div>
       )}
 
