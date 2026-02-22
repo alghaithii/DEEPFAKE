@@ -42,10 +42,11 @@ class DeepfakeDetectorAPITester:
         # Default headers
         default_headers = {'Content-Type': 'application/json'}
         
-        # Add authorization as query parameter (backend expects it this way)
-        query_params = {}
+        # Add authorization as Bearer header (standard method)
         if self.token:
-            query_params['authorization'] = f'Bearer {self.token}'
+            default_headers['Authorization'] = f'Bearer {self.token}'
+        
+        query_params = {}
         if params:
             query_params.update(params)
         
@@ -58,19 +59,15 @@ class DeepfakeDetectorAPITester:
 
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
-        if query_params:
-            print(f"   Params: {query_params}")
+        if self.token:
+            print(f"   Auth: Bearer {self.token[:20]}...")
         
         try:
             if method == 'GET':
                 response = requests.get(url, headers=default_headers, params=query_params)
             elif method == 'POST':
                 if files:
-                    # For file uploads, add auth to form data
-                    if self.token:
-                        if data is None:
-                            data = {}
-                        data['authorization'] = f'Bearer {self.token}'
+                    # For file uploads, use form data with Authorization header
                     response = requests.post(url, data=data, files=files, headers=default_headers)
                 else:
                     response = requests.post(url, json=data, headers=default_headers, params=query_params)
