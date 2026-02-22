@@ -180,41 +180,41 @@ class DeepfakeDetectorAPITester:
         return success
 
     def test_file_upload_analysis(self):
-        """Test file upload and analysis with a small test image"""
-        # Create a small test image file
-        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
-            # Create minimal JPEG data (this is a minimal valid JPEG header)
-            jpeg_data = bytes([
-                0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
-                0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xD9
-            ])
-            tmp_file.write(jpeg_data)
-            tmp_file_path = tmp_file.name
-        
+        """Test file upload and analysis with a real test image"""
         try:
-            with open(tmp_file_path, 'rb') as f:
-                files = {'file': ('test_image.jpg', f, 'image/jpeg')}
-                data = {'language': 'en'}
+            # Create a proper test image using PIL
+            from PIL import Image
+            import io
+            
+            # Create a simple red image
+            img = Image.new('RGB', (100, 100), color='red')
+            buf = io.BytesIO()
+            img.save(buf, format='JPEG')
+            buf.seek(0)
+            
+            files = {'file': ('test_red_image.jpg', buf, 'image/jpeg')}
+            data = {'language': 'en'}
+            
+            success, response = self.run_test(
+                "File Upload & Analysis",
+                "POST",
+                "analysis/upload",
+                200,
+                data=data,
+                files=files
+            )
+            
+            if success:
+                self.analysis_id = response.get('id')
+                print(f"   ✓ Analysis ID: {self.analysis_id}")
+                print(f"   ✓ Verdict: {response.get('verdict')}")
+                print(f"   ✓ Confidence: {response.get('confidence')}%")
+            
+            return success
                 
-                success, response = self.run_test(
-                    "File Upload & Analysis",
-                    "POST",
-                    "analysis/upload",
-                    200,
-                    data=data,
-                    files=files
-                )
-                
-                if success:
-                    self.analysis_id = response.get('id')
-                    print(f"   ✓ Analysis ID: {self.analysis_id}")
-                
-                return success
-                
-        finally:
-            # Clean up temp file
-            if os.path.exists(tmp_file_path):
-                os.unlink(tmp_file_path)
+        except Exception as e:
+            print(f"   ❌ Exception during file upload: {str(e)}")
+            return False
 
     def test_get_specific_analysis(self):
         """Test getting a specific analysis by ID"""
