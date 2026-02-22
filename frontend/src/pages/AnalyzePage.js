@@ -76,8 +76,8 @@ export default function AnalyzePage() {
     setAnalyzing(true);
     setCurrentStage(0);
 
-    // Simulate stage progression
-    const stageTimers = [800, 1500, 2500, 3500];
+    // Simulate stage progression for dual-pass analysis
+    const stageTimers = [1500, 4000, 7000, 10000, 14000];
     stageTimers.forEach((time, i) => {
       setTimeout(() => setCurrentStage(i + 1), time);
     });
