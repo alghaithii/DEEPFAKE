@@ -26,12 +26,6 @@ const analysisStages = {
     { key: 'verdict', label: 'المراجعة المتقاطعة والحكم النهائي', icon: Shield },
   ],
 };
-    { key: 'metadata', label: 'استخراج البيانات الوصفية', icon: Fingerprint },
-    { key: 'structure', label: 'التحليل الهيكلي', icon: Activity },
-    { key: 'ai', label: 'كشف أنماط الذكاء الاصطناعي', icon: Eye },
-    { key: 'verdict', label: 'إصدار الحكم', icon: Shield },
-  ],
-};
 
 export default function AnalyzePage() {
   const { t, lang, token, API } = useAuth();
