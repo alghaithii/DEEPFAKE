@@ -236,7 +236,7 @@ Analyze thoroughly for:
 async def upload_and_analyze(
     file: UploadFile = File(...),
     language: str = Form("en"),
-    authorization: str = ""
+    authorization: str = Form("")
 ):
     user = await get_current_user(authorization)
     file_type = detect_file_type(file.filename)
