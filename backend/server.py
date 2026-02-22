@@ -167,6 +167,103 @@ def detect_file_type(filename: str) -> str:
         return 'audio'
     return 'unknown'
 
+def generate_video_thumbnail(file_path: str) -> Optional[str]:
+    """Extract a frame from video as base64 thumbnail"""
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+            tmp_thumb = tmp.name
+        subprocess.run(
+            ['ffmpeg', '-i', file_path, '-ss', '00:00:01', '-vframes', '1', '-q:v', '2', '-y', tmp_thumb],
+            capture_output=True, timeout=15
+        )
+        if os.path.exists(tmp_thumb) and os.path.getsize(tmp_thumb) > 0:
+            with open(tmp_thumb, 'rb') as f:
+                b64 = base64.b64encode(f.read()).decode('utf-8')
+            os.unlink(tmp_thumb)
+            return b64
+        if os.path.exists(tmp_thumb):
+            os.unlink(tmp_thumb)
+    except Exception as e:
+        logger.warning(f"Video thumbnail extraction failed: {e}")
+    return None
+
+
+def generate_audio_waveform(file_path: str) -> Optional[str]:
+    """Generate a waveform visualization image from audio as base64"""
+    try:
+        # Convert to wav first using ffmpeg
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            tmp_wav = tmp.name
+        subprocess.run(
+            ['ffmpeg', '-i', file_path, '-ac', '1', '-ar', '8000', '-y', tmp_wav],
+            capture_output=True, timeout=30
+        )
+        if not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) == 0:
+            return None
+
+        # Read wav samples
+        with wave.open(tmp_wav, 'rb') as wf:
+            n_frames = wf.getnframes()
+            sample_width = wf.getsampwidth()
+            raw = wf.readframes(n_frames)
+
+        os.unlink(tmp_wav)
+
+        if sample_width == 2:
+            samples = list(struct.unpack(f'<{n_frames}h', raw))
+        elif sample_width == 1:
+            samples = [s - 128 for s in raw]
+        else:
+            return None
+
+        # Downsample to ~400 points
+        width, height = 600, 150
+        n_bars = 200
+        chunk_size = max(1, len(samples) // n_bars)
+        bars = []
+        for i in range(0, len(samples), chunk_size):
+            chunk = samples[i:i + chunk_size]
+            if chunk:
+                rms = (sum(s * s for s in chunk) / len(chunk)) ** 0.5
+                bars.append(rms)
+        if not bars:
+            return None
+
+        max_val = max(bars) or 1
+        bars = [b / max_val for b in bars]
+
+        # Draw waveform
+        img = PILImage.new('RGB', (width, height), '#F5F5F0')
+        draw = ImageDraw.Draw(img)
+        bar_w = width / len(bars)
+        mid = height / 2
+        for i, b in enumerate(bars):
+            x = int(i * bar_w)
+            h = max(2, int(b * mid * 0.85))
+            color = '#1A1A18' if b < 0.5 else '#C05621' if b < 0.8 else '#C53030'
+            draw.rectangle([x, int(mid - h), int(x + bar_w - 1), int(mid + h)], fill=color)
+
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+    except Exception as e:
+        logger.warning(f"Audio waveform generation failed: {e}")
+    return None
+
+
+def get_media_duration(file_path: str) -> Optional[float]:
+    """Get duration of video/audio file in seconds"""
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', file_path],
+            capture_output=True, text=True, timeout=10
+        )
+        return round(float(result.stdout.strip()), 1)
+    except Exception:
+        return None
+
+
 async def run_analysis_pass(file_path: str, file_type: str, filename: str, mime_type: str, system_msg: str, user_msg_text: str) -> str:
     """Run a single analysis pass with Gemini"""
     chat = LlmChat(
