@@ -72,6 +72,13 @@ class AnalysisResponse(BaseModel):
 class CompareRequest(BaseModel):
     analysis_ids: List[str]
 
+class UrlAnalysisRequest(BaseModel):
+    url: str
+    language: str = "en"
+
+class ShareRequest(BaseModel):
+    analysis_id: str
+
 # ============ AUTH HELPERS ============
 
 def hash_password(password: str) -> str:
