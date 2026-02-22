@@ -11,6 +11,7 @@ import HistoryPage from "./pages/HistoryPage";
 import AnalysisDetailPage from "./pages/AnalysisDetailPage";
 import ComparePage from "./pages/ComparePage";
 import SettingsPage from "./pages/SettingsPage";
+import SharedAnalysisPage from "./pages/SharedAnalysisPage";
 import AppLayout from "./components/AppLayout";
 
 function ProtectedRoute({ children }) {
