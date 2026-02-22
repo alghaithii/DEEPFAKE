@@ -432,9 +432,12 @@ class DeepfakeDetectorAPITester:
             self.test_get_current_user,
             self.test_get_analysis_stats,
             self.test_get_analysis_history,
-            self.test_file_upload_analysis,
-            self.test_get_specific_analysis,
-            self.test_generate_pdf_report,
+            self.test_file_upload_analysis_english,
+            self.test_file_upload_analysis_arabic,
+            self.test_get_specific_analysis_english,
+            self.test_get_specific_analysis_arabic,
+            self.test_generate_pdf_report_english,
+            self.test_generate_pdf_report_arabic,
             self.test_compare_analyses,
             # self.test_delete_analysis,  # Skip delete to preserve test data
         ]
