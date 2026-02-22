@@ -269,10 +269,12 @@ Respond with ONLY a valid JSON object:
     "recommendation": "actionable recommendation"
 }}"""
 
+        lang_reminder = "IMPORTANT: Respond with ALL text values in Arabic (العربية)." if language == "ar" else ""
+
         pass2_user = {
-            'image': "Based on the observations from Pass 1, now render your forensic verdict. Examine EVERY indicator on the checklist. If you find even 2-3 AI indicators, classify as 'suspicious' or 'likely_fake'. Be thorough and honest.",
-            'video': "Based on the observations from Pass 1, now render your forensic verdict on this video. Check every deepfake indicator. Be thorough.",
-            'audio': "Based on the observations from Pass 1, now render your forensic verdict on this audio. Check every synthetic audio indicator. Be thorough."
+            'image': f"Based on the observations from Pass 1, now render your forensic verdict. Examine EVERY indicator on the checklist. If you find even 2-3 AI indicators, classify as 'suspicious' or 'likely_fake'. Be thorough and honest. {lang_reminder}",
+            'video': f"Based on the observations from Pass 1, now render your forensic verdict on this video. Check every deepfake indicator. Be thorough. {lang_reminder}",
+            'audio': f"Based on the observations from Pass 1, now render your forensic verdict on this audio. Check every synthetic audio indicator. Be thorough. {lang_reminder}"
         }
 
         # Execute Pass 1
