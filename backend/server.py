@@ -156,37 +156,58 @@ def detect_file_type(filename: str) -> str:
 async def analyze_with_gemini(file_path: str, file_type: str, filename: str, language: str = "en") -> dict:
     """Analyze a file using Gemini to detect if it's fake/AI-generated"""
     try:
-        lang_instruction = "Respond in Arabic." if language == "ar" else "Respond in English."
+        lang_instruction = "يجب أن تكون جميع النصوص في الاستجابة باللغة العربية." if language == "ar" else "All text in the response must be in English."
 
-        system_prompt = f"""You are an expert forensic analyst specializing in detecting AI-generated and manipulated media.
-Analyze the provided {file_type} file and determine if it appears to be authentic or potentially fake/AI-generated.
+        system_prompt = f"""You are a world-class digital forensics expert specializing in deepfake detection and media authenticity verification. You work at a leading digital forensics laboratory.
+
+CRITICAL ACCURACY RULES:
+- You must be HIGHLY ACCURATE. Do NOT flag authentic content as fake.
+- Real-world media (photos from phones, real voice recordings, natural videos) should be classified as "authentic" unless there are CLEAR, SPECIFIC signs of manipulation.
+- Compression artifacts, slight noise, or format conversion artifacts are NORMAL in real media - they are NOT signs of fakery.
+- Audio recorded from microphones naturally has background noise, slight variations in pitch, and breathing sounds - these are signs of AUTHENTICITY, not fakery.
+- Only flag as "suspicious" or "likely_fake" when you find CONCRETE evidence of manipulation such as:
+  * For images: clear GAN artifacts (grid patterns), impossible geometry, inconsistent lighting physics, clone stamping, splicing boundaries, warped text
+  * For video: temporal flickering between frames, face-swap boundary artifacts, lip-sync desynchronization, unnatural head movement physics
+  * For audio: robotic pitch uniformity, unnatural spectral gaps, TTS synthesis markers, voice cloning concatenation artifacts, impossible breathing patterns
+- When in doubt, lean toward "authentic" with moderate confidence rather than false positives.
 
 {lang_instruction}
 
-You MUST respond with ONLY a valid JSON object (no markdown, no code blocks, no extra text) with this exact structure:
+You MUST respond with ONLY a valid JSON object (no markdown, no code blocks) with this EXACT structure:
 {{
     "verdict": "authentic" or "suspicious" or "likely_fake",
-    "confidence": a number between 0 and 100,
-    "summary": "Brief overall assessment",
+    "confidence": number between 0 and 100,
+    "summary": "Comprehensive assessment of the file's authenticity",
+    "analysis_stages": [
+        {{
+            "stage": "stage name (e.g., Metadata Analysis, Structural Analysis, AI Pattern Detection, Spectral Analysis)",
+            "status": "pass" or "warning" or "fail",
+            "finding": "what was found in this stage"
+        }}
+    ],
     "indicators": [
         {{
             "name": "indicator name",
-            "description": "what was found",
-            "severity": "low" or "medium" or "high"
+            "description": "detailed description of finding",
+            "severity": "low" or "medium" or "high",
+            "category": "metadata" or "structural" or "ai_pattern" or "temporal" or "spectral" or "behavioral"
         }}
     ],
     "technical_details": {{
-        "artifacts_found": ["list of artifacts"],
+        "artifacts_found": ["list of specific artifacts"],
         "consistency_score": number 0-100,
-        "metadata_analysis": "metadata findings"
+        "metadata_analysis": "detailed metadata findings",
+        "format_info": "file format and encoding details",
+        "quality_assessment": "quality and compression analysis"
     }},
-    "recommendation": "what should the user do"
+    "forensic_notes": "detailed technical forensic observations for experts",
+    "recommendation": "clear actionable recommendation for the user"
 }}
 
-Analyze thoroughly for:
-- For images: facial inconsistencies, lighting errors, edge artifacts, texture anomalies, metadata inconsistencies, GAN artifacts
-- For video: temporal inconsistencies, frame-by-frame anomalies, lip sync issues, unnatural movements
-- For audio: spectral anomalies, unnatural pauses, synthesis artifacts, voice cloning indicators"""
+ANALYSIS METHODOLOGY by file type:
+- For images: Check EXIF metadata integrity, Error Level Analysis patterns, noise consistency, lighting physics, edge coherence, facial geometry, texture frequency analysis, compression artifact patterns
+- For video: Frame-by-frame temporal consistency, motion flow analysis, audio-visual synchronization, codec artifact analysis, temporal noise patterns, facial landmark tracking consistency
+- For audio: Spectral analysis across frequency bands, pitch contour naturalness, formant transition smoothness, background noise consistency, energy envelope analysis, voice quality metrics"""
 
         chat = LlmChat(
             api_key=GEMINI_API_KEY,
@@ -197,8 +218,14 @@ Analyze thoroughly for:
         mime_type = get_mime_type(file_type, filename)
         file_content = FileContentWithMimeType(file_path=file_path, mime_type=mime_type)
 
+        analysis_instruction = {
+            'image': f"Perform a comprehensive forensic analysis of this image file '{filename}'. Examine metadata, pixel-level patterns, structural consistency, and AI generation markers. Be accurate - do not flag natural photos as fake.",
+            'video': f"Perform a comprehensive forensic analysis of this video file '{filename}'. Examine temporal consistency, frame coherence, audio-visual sync, and deepfake markers. Be accurate - do not flag natural recordings as fake.",
+            'audio': f"Perform a comprehensive forensic analysis of this audio file '{filename}'. Examine spectral patterns, pitch naturalness, voice characteristics, background noise consistency, and synthesis markers. Be accurate - real recordings have natural imperfections like breathing, pauses, and ambient noise which are signs of authenticity."
+        }
+
         user_msg = UserMessage(
-            text=f"Analyze this {file_type} file named '{filename}' for signs of AI generation, deepfake manipulation, or any form of digital forgery. Provide your detailed assessment.",
+            text=analysis_instruction.get(file_type, f"Analyze this {file_type} file for authenticity."),
             file_contents=[file_content]
         )
 
@@ -212,6 +239,13 @@ Analyze thoroughly for:
             response_text = response_text.split('```')[1].split('```')[0].strip()
 
         result = json.loads(response_text)
+        
+        # Ensure all required fields exist
+        result.setdefault("analysis_stages", [])
+        result.setdefault("forensic_notes", "")
+        result.setdefault("indicators", [])
+        result.setdefault("technical_details", {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "N/A", "format_info": "N/A", "quality_assessment": "N/A"})
+        
         return result
 
     except json.JSONDecodeError as e:
@@ -219,10 +253,12 @@ Analyze thoroughly for:
         return {
             "verdict": "suspicious",
             "confidence": 50,
-            "summary": "Analysis completed but results could not be fully parsed. Manual review recommended.",
-            "indicators": [{"name": "Parse Error", "description": "AI response format issue", "severity": "low"}],
-            "technical_details": {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "Partial analysis"},
-            "recommendation": "Re-upload the file for another analysis attempt."
+            "summary": "تعذر تحليل النتائج بالكامل. يُنصح بالمراجعة اليدوية." if language == "ar" else "Analysis completed but results could not be fully parsed. Manual review recommended.",
+            "analysis_stages": [{"stage": "AI Analysis", "status": "warning", "finding": "Partial results"}],
+            "indicators": [{"name": "Parse Error", "description": "AI response format issue", "severity": "low", "category": "metadata"}],
+            "technical_details": {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "Partial", "format_info": "N/A", "quality_assessment": "N/A"},
+            "forensic_notes": "",
+            "recommendation": "أعد تحميل الملف لمحاولة تحليل أخرى." if language == "ar" else "Re-upload the file for another analysis attempt."
         }
     except Exception as e:
         logger.error(f"Analysis error: {str(e)}")
