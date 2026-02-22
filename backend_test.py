@@ -238,10 +238,10 @@ class DeepfakeDetectorAPITester:
             
         print(f"\n🔍 Testing PDF Report Generation...")
         url = f"{self.api_url}/analysis/{self.analysis_id}/report"
-        params = {'authorization': f'Bearer {self.token}'} if self.token else {}
+        headers = {'Authorization': f'Bearer {self.token}'} if self.token else {}
         
         try:
-            response = requests.get(url, params=params)
+            response = requests.get(url, headers=headers)
             success = response.status_code == 200 and 'application/pdf' in response.headers.get('content-type', '')
             
             self.log_test("PDF Report Generation", success, response.status_code,
