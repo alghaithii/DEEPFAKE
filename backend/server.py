@@ -80,11 +80,11 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_token(user_id: str) -> str:
     return jwt.encode({"user_id": user_id, "exp": datetime.now(timezone.utc).timestamp() + 86400 * 7}, JWT_SECRET, algorithm="HS256")
 
-async def get_current_user(token: str = None):
-    if not token:
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        token = token.replace("Bearer ", "")
+        token = authorization.replace("Bearer ", "")
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
         if not user:
