@@ -266,12 +266,14 @@ export default function AnalyzePage() {
             );
           })()}
 
-          {/* Annotated Image */}
+          {/* Annotated Image/Video/Audio */}
           <AnnotatedImage
             preview={result.preview}
             annotations={result.details?.annotations}
             fileType={result.file_type}
             mimeGuess={result.file_name?.split('.').pop()}
+            previewType={result.preview_type}
+            mediaDuration={result.media_duration}
           />
 
           {/* Analysis Stages */}
