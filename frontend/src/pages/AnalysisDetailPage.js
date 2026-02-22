@@ -255,6 +255,24 @@ export default function AnalysisDetailPage() {
         </div>
       )}
 
+      {/* Raw Observations from Pass 1 */}
+      {details.technical_details?.raw_observations?.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#DADAD5] p-6" data-testid="detail-raw-observations">
+          <h3 className="text-sm font-medium text-[#858580] uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            {lang === 'ar' ? 'الملاحظات الأولية (المرحلة 1)' : 'Initial Observations (Pass 1)'}
+          </h3>
+          <div className="space-y-2">
+            {details.technical_details.raw_observations.map((obs, i) => (
+              <div key={i} className="flex items-start gap-2 p-3 rounded-lg bg-[#F5F5F0]">
+                <span className="text-xs font-mono text-[#858580] shrink-0 mt-0.5">{String(i + 1).padStart(2, '0')}</span>
+                <p className="text-sm text-[#575752]">{obs}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recommendation */}
       {details.recommendation && (
         <div className="bg-[#2C5282]/5 rounded-xl border border-[#2C5282]/20 p-6" data-testid="detail-recommendation">
