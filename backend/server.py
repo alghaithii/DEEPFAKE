@@ -282,8 +282,7 @@ async def upload_and_analyze(
         os.unlink(tmp_path)
 
 @api_router.get("/analysis/history")
-async def get_history(authorization: str = "", limit: int = 50, skip: int = 0):
-    user = await get_current_user(authorization)
+async def get_history(limit: int = 50, skip: int = 0, user: dict = Depends(get_current_user)):
     analyses = await db.analyses.find(
         {"user_id": user["id"]},
         {"_id": 0}
