@@ -30,11 +30,13 @@
 - [x] JWT authentication (register/login)
 - [x] Landing page with hero, features, how-it-works sections
 - [x] File upload with drag & drop (images, video, audio)
-- [x] Gemini AI analysis with detailed results
-- [x] **Improved AI Accuracy** - Better prompt that doesn't flag real content as fake
+- [x] **Dual-Pass AI Analysis** - Pass 1: neutral observation, Pass 2: forensic verdict
+- [x] **Image Annotations** - Visual markers on images showing exactly where issues are found
+- [x] **URL Analysis** - Paste any image/video/audio URL to analyze directly
+- [x] **Public Share Links** - Share analysis results via public link
 - [x] **Arabic AI Responses** - Full Arabic text in analysis when language=ar
 - [x] **Arabic PDF Reports** - RTL-supported PDF with arabic-reshaper
-- [x] **Forensic Analysis Pipeline** - Multi-stage visualization (metadata, structural, AI, quality)
+- [x] **Forensic Analysis Pipeline** - 6-stage visualization with real-time progress
 - [x] **Confidence Gauge** - SVG semi-circle gauge visualization
 - [x] **Forensic Notes** - Advanced technical forensic observations section
 - [x] **Indicator Categories** - metadata, structural, ai_pattern, temporal, spectral, behavioral
@@ -47,6 +49,7 @@
 - [x] Bilingual Arabic/English with RTL support
 - [x] Mobile responsive design
 - [x] "Digital Clay" beige theme design
+- [x] Shared analysis public page
 
 ## Prioritized Backlog
 ### P0 (Critical) - All completed
