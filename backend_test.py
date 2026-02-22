@@ -35,14 +35,19 @@ class DeepfakeDetectorAPITester:
         status_icon = "✅" if success else "❌"
         print(f"{status_icon} {name} - {response_code} - {details}")
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, files=None, headers=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, files=None, headers=None, params=None):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}"
         
         # Default headers
         default_headers = {'Content-Type': 'application/json'}
+        
+        # Add authorization as query parameter (backend expects it this way)
+        query_params = {}
         if self.token:
-            default_headers['authorization'] = f'Bearer {self.token}'
+            query_params['authorization'] = f'Bearer {self.token}'
+        if params:
+            query_params.update(params)
         
         if headers:
             default_headers.update(headers)
@@ -53,19 +58,26 @@ class DeepfakeDetectorAPITester:
 
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
+        if query_params:
+            print(f"   Params: {query_params}")
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=default_headers)
+                response = requests.get(url, headers=default_headers, params=query_params)
             elif method == 'POST':
                 if files:
+                    # For file uploads, add auth to form data
+                    if self.token:
+                        if data is None:
+                            data = {}
+                        data['authorization'] = f'Bearer {self.token}'
                     response = requests.post(url, data=data, files=files, headers=default_headers)
                 else:
-                    response = requests.post(url, json=data, headers=default_headers)
+                    response = requests.post(url, json=data, headers=default_headers, params=query_params)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=default_headers)
+                response = requests.put(url, json=data, headers=default_headers, params=query_params)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=default_headers)
+                response = requests.delete(url, headers=default_headers, params=query_params)
             
             success = response.status_code == expected_status
             
