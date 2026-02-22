@@ -4,48 +4,48 @@
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:00:05.801331"
+    "timestamp": "2026-02-22T13:00:29.636031"
   },
   {
     "test_name": "User Login (existing test user)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:00:06.163897"
+    "timestamp": "2026-02-22T13:00:29.970082"
   },
   {
     "test_name": "Get Current User",
-    "status": "FAIL",
-    "response_code": 401,
-    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
-    "timestamp": "2026-02-22T13:00:06.266676"
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:00:30.098497"
   },
   {
     "test_name": "Get Analysis Stats",
-    "status": "FAIL",
-    "response_code": 401,
-    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
-    "timestamp": "2026-02-22T13:00:06.380204"
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:00:30.219782"
   },
   {
     "test_name": "Get Analysis History",
-    "status": "FAIL",
-    "response_code": 401,
-    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
-    "timestamp": "2026-02-22T13:00:06.497381"
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:00:30.331599"
   },
   {
     "test_name": "File Upload & Analysis",
     "status": "FAIL",
-    "response_code": 401,
-    "details": "Expected 200, got response: {'detail': 'Not authenticated'}",
-    "timestamp": "2026-02-22T13:00:06.609609"
+    "response_code": 520,
+    "details": "Expected 200, got response: <!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if I",
+    "timestamp": "2026-02-22T13:00:37.081760"
   },
   {
     "test_name": "Compare Analyses (expected to fail - insufficient data)",
-    "status": "FAIL",
-    "response_code": 401,
-    "details": "Expected 400, got response: {'detail': 'Not authenticated'}",
-    "timestamp": "2026-02-22T13:00:06.719073"
+    "status": "PASS",
+    "response_code": 400,
+    "details": "Expected 400",
+    "timestamp": "2026-02-22T13:00:37.259982"
   }
 ]
