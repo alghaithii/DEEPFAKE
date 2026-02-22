@@ -50,6 +50,22 @@ export default function AnalyzePage() {
         const reader = new FileReader();
         reader.onload = (e) => setPreview(e.target.result);
         reader.readAsDataURL(f);
+      } else if (f.type.startsWith('video/')) {
+        // Generate video thumbnail from first frame
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadeddata = () => {
+          video.currentTime = 1;
+        };
+        video.onseeked = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d').drawImage(video, 0, 0);
+          setPreview(canvas.toDataURL('image/jpeg'));
+          URL.revokeObjectURL(video.src);
+        };
+        video.src = URL.createObjectURL(f);
       } else {
         setPreview(null);
       }
