@@ -488,10 +488,21 @@ async def upload_and_analyze(
         tmp_path = tmp.name
 
     try:
-        # Generate image preview for annotations
+        # Generate preview based on file type
         preview_b64 = None
+        preview_type = None
+        media_duration = None
         if file_type == 'image' and len(content) < 5 * 1024 * 1024:
             preview_b64 = base64.b64encode(content).decode('utf-8')
+            preview_type = 'image'
+        elif file_type == 'video':
+            preview_b64 = generate_video_thumbnail(tmp_path)
+            preview_type = 'video_thumb'
+            media_duration = get_media_duration(tmp_path)
+        elif file_type == 'audio':
+            preview_b64 = generate_audio_waveform(tmp_path)
+            preview_type = 'audio_waveform'
+            media_duration = get_media_duration(tmp_path)
 
         # Analyze with Gemini
         result = await analyze_with_gemini(tmp_path, file_type, file.filename, language)
@@ -509,6 +520,8 @@ async def upload_and_analyze(
             "details": result,
             "language": language,
             "preview": preview_b64,
+            "preview_type": preview_type,
+            "media_duration": media_duration,
             "share_id": None,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
@@ -524,6 +537,8 @@ async def upload_and_analyze(
             "confidence": float(result.get("confidence", 0)),
             "details": result,
             "preview": preview_b64,
+            "preview_type": preview_type,
+            "media_duration": media_duration,
             "created_at": analysis_doc["created_at"]
         }
     finally:
