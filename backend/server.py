@@ -343,6 +343,7 @@ IMPORTANT for annotations: You MUST provide at least 3-6 annotations pointing to
         result.setdefault("analysis_stages", [])
         result.setdefault("forensic_notes", "")
         result.setdefault("indicators", [])
+        result.setdefault("annotations", [])
         result.setdefault("technical_details", {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "N/A", "format_info": "N/A", "quality_assessment": "N/A"})
 
         # Add pass 1 observations to technical details for transparency
