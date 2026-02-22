@@ -387,6 +387,11 @@ async def upload_and_analyze(
         tmp_path = tmp.name
 
     try:
+        # Generate image preview for annotations
+        preview_b64 = None
+        if file_type == 'image' and len(content) < 5 * 1024 * 1024:
+            preview_b64 = base64.b64encode(content).decode('utf-8')
+
         # Analyze with Gemini
         result = await analyze_with_gemini(tmp_path, file_type, file.filename, language)
 
@@ -402,6 +407,8 @@ async def upload_and_analyze(
             "confidence": float(result.get("confidence", 0)),
             "details": result,
             "language": language,
+            "preview": preview_b64,
+            "share_id": None,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.analyses.insert_one(analysis_doc)
@@ -415,10 +422,103 @@ async def upload_and_analyze(
             "verdict": result.get("verdict", "unknown"),
             "confidence": float(result.get("confidence", 0)),
             "details": result,
+            "preview": preview_b64,
             "created_at": analysis_doc["created_at"]
         }
     finally:
         os.unlink(tmp_path)
+
+@api_router.post("/analysis/url")
+async def analyze_from_url(data: UrlAnalysisRequest, user: dict = Depends(get_current_user)):
+    """Analyze a file from URL"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client_http:
+            resp = await client_http.get(data.url)
+            resp.raise_for_status()
+            content = resp.content
+
+        # Detect type from content-type or URL
+        ct = resp.headers.get("content-type", "")
+        filename = data.url.split("/")[-1].split("?")[0] or "downloaded_file"
+        if "image" in ct:
+            file_type = "image"
+            if not any(filename.endswith(e) for e in ['.jpg', '.jpeg', '.png', '.webp', '.gif']):
+                filename += ".jpg"
+        elif "video" in ct:
+            file_type = "video"
+        elif "audio" in ct:
+            file_type = "audio"
+        else:
+            file_type = detect_file_type(filename)
+
+        if file_type == 'unknown':
+            raise HTTPException(status_code=400, detail="Could not detect file type from URL")
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{filename.split('.')[-1]}") as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        try:
+            preview_b64 = None
+            if file_type == 'image' and len(content) < 5 * 1024 * 1024:
+                preview_b64 = base64.b64encode(content).decode('utf-8')
+
+            result = await analyze_with_gemini(tmp_path, file_type, filename, data.language)
+
+            analysis_id = str(uuid.uuid4())
+            analysis_doc = {
+                "id": analysis_id,
+                "user_id": user["id"],
+                "file_type": file_type,
+                "file_name": filename,
+                "file_size": len(content),
+                "source_url": data.url,
+                "verdict": result.get("verdict", "unknown"),
+                "confidence": float(result.get("confidence", 0)),
+                "details": result,
+                "language": data.language,
+                "preview": preview_b64,
+                "share_id": None,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.analyses.insert_one(analysis_doc)
+
+            return {
+                "id": analysis_id,
+                "user_id": user["id"],
+                "file_type": file_type,
+                "file_name": filename,
+                "file_size": len(content),
+                "verdict": result.get("verdict", "unknown"),
+                "confidence": float(result.get("confidence", 0)),
+                "details": result,
+                "preview": preview_b64,
+                "created_at": analysis_doc["created_at"]
+            }
+        finally:
+            os.unlink(tmp_path)
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=400, detail=f"Failed to download file: {str(e)}")
+
+@api_router.post("/analysis/{analysis_id}/share")
+async def create_share_link(analysis_id: str, user: dict = Depends(get_current_user)):
+    """Create a public share link for an analysis"""
+    analysis = await db.analyses.find_one({"id": analysis_id, "user_id": user["id"]}, {"_id": 0})
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    share_id = analysis.get("share_id")
+    if not share_id:
+        share_id = hashlib.sha256(f"{analysis_id}-{uuid.uuid4()}".encode()).hexdigest()[:12]
+        await db.analyses.update_one({"id": analysis_id}, {"$set": {"share_id": share_id}})
+    return {"share_id": share_id}
+
+@api_router.get("/shared/{share_id}")
+async def get_shared_analysis(share_id: str):
+    """Public endpoint - no auth required"""
+    analysis = await db.analyses.find_one({"share_id": share_id}, {"_id": 0, "user_id": 0, "preview": 0})
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Shared analysis not found")
+    return analysis
 
 @api_router.get("/analysis/history")
 async def get_history(limit: int = 50, skip: int = 0, user: dict = Depends(get_current_user)):
