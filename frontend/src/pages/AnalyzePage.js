@@ -94,12 +94,12 @@ export default function AnalyzePage() {
         },
       });
 
-      setCurrentStage(4);
+      setCurrentStage(5);
       setTimeout(() => {
         setResult(res.data);
         toast.success(lang === 'ar' ? 'تم التحليل بنجاح' : 'Analysis complete');
         setAnalyzing(false);
-      }, 500);
+      }, 800);
     } catch (err) {
       setCurrentStage(-1);
       toast.error(err.response?.data?.detail || (lang === 'ar' ? 'فشل التحليل' : 'Analysis failed'));
