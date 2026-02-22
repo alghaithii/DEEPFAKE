@@ -381,24 +381,65 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+
+    is_arabic = analysis.get("language", "en") == "ar"
+
+    def shape_ar(text):
+        """Reshape Arabic text for proper PDF rendering"""
+        if not is_arabic or not text:
+            return str(text)
+        try:
+            reshaped = arabic_reshaper.reshape(str(text))
+            return get_display(reshaped)
+        except Exception:
+            return str(text)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     elements = []
 
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], fontSize=24, textColor=colors.HexColor('#1A1A18'),
+                                  alignment=2 if is_arabic else 0)
+    normal_ar = ParagraphStyle('NormalAr', parent=styles['Normal'], alignment=2 if is_arabic else 0, fontSize=11, leading=16)
+    heading_ar = ParagraphStyle('HeadingAr', parent=styles['Heading2'], alignment=2 if is_arabic else 0)
+
     # Title
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], fontSize=24, textColor=colors.HexColor('#1A1A18'))
-    elements.append(Paragraph("Deepfake Analysis Report", title_style))
+    title = shape_ar("تقرير تحليل المصداقية الرقمية") if is_arabic else "Digital Authenticity Analysis Report"
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 6))
+    elements.append(Paragraph("TruthLens Forensic Report", ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#858580'), alignment=2 if is_arabic else 0)))
     elements.append(Spacer(1, 20))
 
-    # File info
+    # Verdict badge
+    verdict = analysis.get("verdict", "unknown")
+    verdict_color = {'authentic': '#2F855A', 'suspicious': '#C05621', 'likely_fake': '#C53030'}.get(verdict, '#858580')
+    verdict_labels = {
+        'authentic': shape_ar('أصلي') if is_arabic else 'AUTHENTIC',
+        'suspicious': shape_ar('مشبوه') if is_arabic else 'SUSPICIOUS',
+        'likely_fake': shape_ar('مزيف على الأرجح') if is_arabic else 'LIKELY FAKE'
+    }
+    verdict_style = ParagraphStyle('Verdict', parent=styles['Title'], fontSize=18, textColor=colors.HexColor(verdict_color), alignment=1)
+    elements.append(Paragraph(f"{verdict_labels.get(verdict, verdict.upper())} — {analysis.get('confidence', 0)}%", verdict_style))
+    elements.append(Spacer(1, 20))
+
+    # File info table
+    fn_label = shape_ar("اسم الملف") if is_arabic else "File Name"
+    ft_label = shape_ar("نوع الملف") if is_arabic else "File Type"
+    dt_label = shape_ar("تاريخ التحليل") if is_arabic else "Analysis Date"
+    vd_label = shape_ar("الحكم") if is_arabic else "Verdict"
+    cf_label = shape_ar("مستوى الثقة") if is_arabic else "Confidence"
+    
     info_data = [
-        ["File Name", analysis.get("file_name", "N/A")],
-        ["File Type", analysis.get("file_type", "N/A")],
-        ["Analysis Date", analysis.get("created_at", "N/A")],
-        ["Verdict", analysis.get("verdict", "N/A").upper()],
-        ["Confidence", f"{analysis.get('confidence', 0)}%"]
+        [fn_label, analysis.get("file_name", "N/A")],
+        [ft_label, analysis.get("file_type", "N/A")],
+        [dt_label, analysis.get("created_at", "N/A")],
+        [vd_label, verdict_labels.get(verdict, verdict)],
+        [cf_label, f"{analysis.get('confidence', 0)}%"]
     ]
     info_table = Table(info_data, colWidths=[150, 350])
     info_table.setStyle(TableStyle([
@@ -407,30 +448,66 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
         ('FONTSIZE', (0, 0), (-1, -1), 11),
         ('PADDING', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DADAD5')),
+        ('ALIGN', (0, 0), (-1, -1), 'RIGHT' if is_arabic else 'LEFT'),
     ]))
     elements.append(info_table)
     elements.append(Spacer(1, 20))
 
-    # Summary
     details = analysis.get("details", {})
-    elements.append(Paragraph("Summary", styles['Heading2']))
-    elements.append(Paragraph(details.get("summary", "No summary available"), styles['Normal']))
+
+    # Summary
+    summary_title = shape_ar("الملخص") if is_arabic else "Summary"
+    elements.append(Paragraph(summary_title, heading_ar))
+    summary_text = details.get("summary", "N/A")
+    elements.append(Paragraph(shape_ar(summary_text) if is_arabic else summary_text, normal_ar))
     elements.append(Spacer(1, 15))
+
+    # Analysis Stages
+    stages = details.get("analysis_stages", [])
+    if stages:
+        stages_title = shape_ar("مراحل التحليل") if is_arabic else "Analysis Stages"
+        elements.append(Paragraph(stages_title, heading_ar))
+        for stage in stages:
+            status_icon = {'pass': '[OK]', 'warning': '[!]', 'fail': '[X]'}.get(stage.get('status', ''), '[?]')
+            status_color = {'pass': '#2F855A', 'warning': '#C05621', 'fail': '#C53030'}.get(stage.get('status', ''), '#858580')
+            stage_text = f"{status_icon} <b>{shape_ar(stage.get('stage', '')) if is_arabic else stage.get('stage', '')}</b>: {shape_ar(stage.get('finding', '')) if is_arabic else stage.get('finding', '')}"
+            elements.append(Paragraph(stage_text, ParagraphStyle('Stage', parent=normal_ar, textColor=colors.HexColor(status_color))))
+            elements.append(Spacer(1, 5))
+        elements.append(Spacer(1, 10))
 
     # Indicators
     indicators = details.get("indicators", [])
     if indicators:
-        elements.append(Paragraph("Detection Indicators", styles['Heading2']))
+        ind_title = shape_ar("المؤشرات المكتشفة") if is_arabic else "Detection Indicators"
+        elements.append(Paragraph(ind_title, heading_ar))
         for ind in indicators:
             severity_color = {'high': '#C53030', 'medium': '#C05621', 'low': '#2F855A'}.get(ind.get('severity', 'low'), '#575752')
-            elements.append(Paragraph(f"<b>{ind.get('name', 'N/A')}</b> [{ind.get('severity', 'N/A').upper()}]", ParagraphStyle('Indicator', parent=styles['Normal'], textColor=colors.HexColor(severity_color))))
-            elements.append(Paragraph(ind.get('description', ''), styles['Normal']))
+            ind_name = shape_ar(ind.get('name', 'N/A')) if is_arabic else ind.get('name', 'N/A')
+            ind_desc = shape_ar(ind.get('description', '')) if is_arabic else ind.get('description', '')
+            elements.append(Paragraph(f"<b>{ind_name}</b> [{ind.get('severity', 'N/A').upper()}]", ParagraphStyle('Indicator', parent=normal_ar, textColor=colors.HexColor(severity_color))))
+            elements.append(Paragraph(ind_desc, normal_ar))
             elements.append(Spacer(1, 8))
 
+    # Forensic Notes
+    forensic_notes = details.get("forensic_notes", "")
+    if forensic_notes:
+        fn_title = shape_ar("ملاحظات جنائية") if is_arabic else "Forensic Notes"
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph(fn_title, heading_ar))
+        elements.append(Paragraph(shape_ar(forensic_notes) if is_arabic else forensic_notes, normal_ar))
+
     # Recommendation
-    elements.append(Spacer(1, 10))
-    elements.append(Paragraph("Recommendation", styles['Heading2']))
-    elements.append(Paragraph(details.get("recommendation", "No recommendation available"), styles['Normal']))
+    rec = details.get("recommendation", "")
+    if rec:
+        elements.append(Spacer(1, 10))
+        rec_title = shape_ar("التوصية") if is_arabic else "Recommendation"
+        elements.append(Paragraph(rec_title, heading_ar))
+        elements.append(Paragraph(shape_ar(rec) if is_arabic else rec, normal_ar))
+
+    # Footer
+    elements.append(Spacer(1, 30))
+    footer_text = shape_ar("تم إنشاء هذا التقرير بواسطة TruthLens - منصة كشف التزييف العميق") if is_arabic else "Generated by TruthLens - AI-Powered Deepfake Detection Platform"
+    elements.append(Paragraph(footer_text, ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#858580'), alignment=1)))
 
     doc.build(elements)
     buffer.seek(0)
@@ -438,7 +515,7 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=analysis-report-{analysis_id[:8]}.pdf"}
+        headers={"Content-Disposition": f"attachment; filename=truthlens-report-{analysis_id[:8]}.pdf"}
     )
 
 # ============ GENERAL ============
