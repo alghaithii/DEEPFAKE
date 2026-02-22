@@ -297,16 +297,52 @@ class DeepfakeDetectorAPITester:
             print(f"   ❌ Exception during file upload: {str(e)}")
             return False
 
-    def test_get_specific_analysis(self):
-        """Test getting a specific analysis by ID"""
-        if not hasattr(self, 'analysis_id') or not self.analysis_id:
-            print("   ⚠️ No analysis ID available, skipping test")
+    def test_get_specific_analysis_english(self):
+        """Test getting a specific English analysis by ID"""
+        if not hasattr(self, 'analysis_id_en') or not self.analysis_id_en:
+            print("   ⚠️ No English analysis ID available, skipping test")
             return False
             
         success, response = self.run_test(
-            "Get Specific Analysis",
+            "Get Specific Analysis (English)",
             "GET",
-            f"analysis/{self.analysis_id}",
+            f"analysis/{self.analysis_id_en}",
+            200
+        )
+        
+        if success:
+            details = response.get('details', {})
+            # Verify all new iteration 3 fields are present
+            required_fields = ['analysis_stages', 'forensic_notes']
+            tech_fields = ['format_info', 'quality_assessment']
+            
+            missing_fields = []
+            for field in required_fields:
+                if not details.get(field):
+                    missing_fields.append(field)
+            
+            tech_details = details.get('technical_details', {})
+            for field in tech_fields:
+                if not tech_details.get(field):
+                    missing_fields.append(f'technical_details.{field}')
+            
+            if missing_fields:
+                print(f"   ⚠️ Missing fields: {missing_fields}")
+            else:
+                print(f"   ✓ All iteration 3 fields present")
+        
+        return success
+
+    def test_get_specific_analysis_arabic(self):
+        """Test getting a specific Arabic analysis by ID"""
+        if not hasattr(self, 'analysis_id_ar') or not self.analysis_id_ar:
+            print("   ⚠️ No Arabic analysis ID available, skipping test")
+            return False
+            
+        success, response = self.run_test(
+            "Get Specific Analysis (Arabic)",
+            "GET",
+            f"analysis/{self.analysis_id_ar}",
             200
         )
         return success
