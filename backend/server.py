@@ -124,13 +124,11 @@ async def login(data: UserLogin):
     return {"token": token, "user": {"id": user["id"], "name": user["name"], "email": user["email"], "language": user.get("language", "en"), "created_at": user["created_at"]}}
 
 @api_router.get("/auth/me")
-async def get_me(authorization: str = ""):
-    user = await get_current_user(authorization)
+async def get_me(user: dict = Depends(get_current_user)):
     return {"id": user["id"], "name": user["name"], "email": user["email"], "language": user.get("language", "en"), "created_at": user["created_at"]}
 
 @api_router.put("/auth/language")
-async def update_language(authorization: str = "", language: str = "en"):
-    user = await get_current_user(authorization)
+async def update_language(language: str = "en", user: dict = Depends(get_current_user)):
     await db.users.update_one({"id": user["id"]}, {"$set": {"language": language}})
     return {"message": "Language updated", "language": language}
 
