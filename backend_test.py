@@ -405,6 +405,162 @@ class DeepfakeDetectorAPITester:
         )
         return success
 
+    def test_url_analysis(self):
+        """Test URL-based analysis (NEW in iteration 4)"""
+        url_data = {
+            "url": "https://thispersondoesnotexist.com/",
+            "language": "en"
+        }
+        
+        success, response = self.run_test(
+            "URL Analysis",
+            "POST",
+            "analysis/url",
+            200,
+            data=url_data
+        )
+        
+        if success:
+            self.url_analysis_id = response.get('id')
+            details = response.get('details', {})
+            print(f"   ✓ URL Analysis ID: {self.url_analysis_id}")
+            print(f"   ✓ Verdict: {response.get('verdict')}")
+            print(f"   ✓ Confidence: {response.get('confidence')}%")
+            
+            # Check for new iteration 4 fields
+            has_annotations = bool(details.get('annotations'))
+            has_preview = bool(response.get('preview'))
+            
+            print(f"   ✓ Has annotations: {has_annotations}")
+            print(f"   ✓ Has preview: {has_preview}")
+            
+        return success
+
+    def test_create_share_link(self):
+        """Test creating share link for analysis (NEW in iteration 4)"""
+        if not hasattr(self, 'analysis_id_en') or not self.analysis_id_en:
+            print("   ⚠️ No English analysis ID available, skipping test")
+            return False
+        
+        success, response = self.run_test(
+            "Create Share Link",
+            "POST",
+            f"analysis/{self.analysis_id_en}/share",
+            200
+        )
+        
+        if success:
+            self.share_id = response.get('share_id')
+            print(f"   ✓ Share ID: {self.share_id}")
+            
+        return success
+
+    def test_get_shared_analysis(self):
+        """Test accessing shared analysis without auth (NEW in iteration 4)"""
+        # Test with known share_id from credentials
+        test_share_id = "8b3ac93c7311"
+        
+        # Temporarily remove token for public access test
+        temp_token = self.token
+        self.token = None
+        
+        success, response = self.run_test(
+            f"Get Shared Analysis (public - {test_share_id})",
+            "GET",
+            f"shared/{test_share_id}",
+            200
+        )
+        
+        # Restore token
+        self.token = temp_token
+        
+        if success:
+            print(f"   ✓ Public access successful")
+            print(f"   ✓ File name: {response.get('file_name')}")
+            print(f"   ✓ Verdict: {response.get('verdict')}")
+            
+            # Verify sensitive data is removed
+            has_user_id = 'user_id' in response
+            has_preview = 'preview' in response
+            print(f"   ✓ user_id hidden: {not has_user_id}")
+            print(f"   ✓ preview hidden: {not has_preview}")
+        
+        return success
+
+    def test_get_own_shared_analysis(self):
+        """Test accessing own shared analysis"""
+        if not hasattr(self, 'share_id') or not self.share_id:
+            print("   ⚠️ No share ID available, skipping test")
+            return False
+        
+        # Test without auth (public access)
+        temp_token = self.token
+        self.token = None
+        
+        success, response = self.run_test(
+            "Get Own Shared Analysis (public)",
+            "GET", 
+            f"shared/{self.share_id}",
+            200
+        )
+        
+        self.token = temp_token
+        return success
+
+    def test_annotations_in_analysis(self):
+        """Test that analysis results include annotations field"""
+        if not hasattr(self, 'analysis_id_en') or not self.analysis_id_en:
+            print("   ⚠️ No English analysis ID available, skipping test")
+            return False
+            
+        success, response = self.run_test(
+            "Check Annotations Field",
+            "GET",
+            f"analysis/{self.analysis_id_en}",
+            200
+        )
+        
+        if success:
+            details = response.get('details', {})
+            annotations = details.get('annotations', [])
+            
+            has_annotations = isinstance(annotations, list)
+            print(f"   ✓ Has annotations field: {has_annotations}")
+            
+            if annotations:
+                first_annotation = annotations[0]
+                has_region = 'region' in first_annotation
+                has_label = 'label' in first_annotation
+                has_description = 'description' in first_annotation
+                has_severity = 'severity' in first_annotation
+                
+                print(f"   ✓ Annotation structure complete: region={has_region}, label={has_label}, desc={has_description}, severity={has_severity}")
+        
+        return success
+
+    def test_preview_field_in_analysis(self):
+        """Test that image analysis includes preview field"""
+        if not hasattr(self, 'analysis_id_en') or not self.analysis_id_en:
+            print("   ⚠️ No English analysis ID available, skipping test")
+            return False
+            
+        success, response = self.run_test(
+            "Check Preview Field",
+            "GET",
+            f"analysis/{self.analysis_id_en}",
+            200
+        )
+        
+        if success:
+            has_preview = 'preview' in response
+            is_base64 = bool(response.get('preview', '').startswith('data:') if response.get('preview') else False)
+            
+            print(f"   ✓ Has preview field: {has_preview}")
+            if has_preview:
+                print(f"   ✓ Preview is base64 format: {is_base64}")
+        
+        return success
+
     def test_compare_analyses(self):
         """Test comparing multiple analyses (will likely fail due to insufficient data)"""
         # This test requires at least 2 analyses
