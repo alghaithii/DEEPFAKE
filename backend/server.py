@@ -336,8 +336,7 @@ async def compare_analyses(data: CompareRequest, user: dict = Depends(get_curren
     return {"analyses": analyses}
 
 @api_router.get("/analysis/{analysis_id}/report")
-async def generate_report(analysis_id: str, authorization: str = ""):
-    user = await get_current_user(authorization)
+async def generate_report(analysis_id: str, user: dict = Depends(get_current_user)):
     analysis = await db.analyses.find_one({"id": analysis_id, "user_id": user["id"]}, {"_id": 0})
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
