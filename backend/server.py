@@ -311,8 +311,7 @@ async def get_stats(user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/analysis/{analysis_id}")
-async def get_analysis(analysis_id: str, authorization: str = ""):
-    user = await get_current_user(authorization)
+async def get_analysis(analysis_id: str, user: dict = Depends(get_current_user)):
     analysis = await db.analyses.find_one({"id": analysis_id, "user_id": user["id"]}, {"_id": 0})
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
