@@ -138,8 +138,10 @@ export default function AnalysisDetailPage() {
           <div>
             <h2 className="text-lg font-medium text-[#1A1A18]">{analysis.file_name}</h2>
             <div className="flex items-center gap-3 text-xs text-[#858580] mt-1 flex-wrap">
-              <span>{analysis.file_type}</span><span>&middot;</span>
-              <span>{analysis.file_size ? `${(analysis.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</span><span>&middot;</span>
+              <span className="uppercase">{analysis.file_type}</span><span>&middot;</span>
+              <span>{analysis.file_size ? `${(analysis.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}</span>
+              {analysis.media_duration && (<><span>&middot;</span><span>{Math.floor(analysis.media_duration / 60)}:{Math.floor(analysis.media_duration % 60).toString().padStart(2, '0')}</span></>)}
+              <span>&middot;</span>
               <span>{new Date(analysis.created_at).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
