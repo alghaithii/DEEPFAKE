@@ -4,83 +4,125 @@
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:26.392129"
+    "timestamp": "2026-02-22T13:50:03.678393"
   },
   {
     "test_name": "User Login (existing test user)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:26.737812"
+    "timestamp": "2026-02-22T13:50:04.091977"
   },
   {
     "test_name": "Get Current User",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:26.842960"
+    "timestamp": "2026-02-22T13:50:04.218032"
   },
   {
     "test_name": "Get Analysis Stats",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:26.981383"
+    "timestamp": "2026-02-22T13:50:04.342288"
   },
   {
     "test_name": "Get Analysis History",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:27.093739"
+    "timestamp": "2026-02-22T13:50:04.517216"
   },
   {
     "test_name": "File Upload & Analysis (English)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:37.949723"
+    "timestamp": "2026-02-22T13:50:17.982336"
   },
   {
     "test_name": "File Upload & Analysis (Arabic)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:47.956716"
+    "timestamp": "2026-02-22T13:50:29.649278"
   },
   {
     "test_name": "Get Specific Analysis (English)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:48.084395"
+    "timestamp": "2026-02-22T13:50:29.782553"
   },
   {
     "test_name": "Get Specific Analysis (Arabic)",
     "status": "PASS",
     "response_code": 200,
     "details": "Expected 200",
-    "timestamp": "2026-02-22T13:33:48.238862"
+    "timestamp": "2026-02-22T13:50:29.894704"
+  },
+  {
+    "test_name": "URL Analysis",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:47.966602"
+  },
+  {
+    "test_name": "Check Annotations Field",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:48.128443"
+  },
+  {
+    "test_name": "Check Preview Field",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:48.241692"
+  },
+  {
+    "test_name": "Create Share Link",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:48.358454"
+  },
+  {
+    "test_name": "Get Shared Analysis (public - 8b3ac93c7311)",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:48.461230"
+  },
+  {
+    "test_name": "Get Own Shared Analysis (public)",
+    "status": "PASS",
+    "response_code": 200,
+    "details": "Expected 200",
+    "timestamp": "2026-02-22T13:50:48.601070"
   },
   {
     "test_name": "PDF Report Generation (English)",
     "status": "PASS",
     "response_code": 200,
     "details": "PDF content received",
-    "timestamp": "2026-02-22T13:33:48.605078"
+    "timestamp": "2026-02-22T13:50:48.935364"
   },
   {
     "test_name": "PDF Report Generation (Arabic)",
     "status": "PASS",
     "response_code": 200,
     "details": "PDF content received",
-    "timestamp": "2026-02-22T13:33:48.767550"
+    "timestamp": "2026-02-22T13:50:49.106585"
   },
   {
     "test_name": "Compare Analyses (expected to fail - insufficient data)",
     "status": "PASS",
     "response_code": 400,
     "details": "Expected 400",
-    "timestamp": "2026-02-22T13:33:48.884026"
+    "timestamp": "2026-02-22T13:50:49.223090"
   }
 ]
