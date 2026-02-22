@@ -179,8 +179,8 @@ class DeepfakeDetectorAPITester:
         )
         return success
 
-    def test_file_upload_analysis(self):
-        """Test file upload and analysis with a real test image"""
+    def test_file_upload_analysis_english(self):
+        """Test file upload and analysis with English language"""
         try:
             # Create a proper test image using PIL
             from PIL import Image
@@ -192,11 +192,11 @@ class DeepfakeDetectorAPITester:
             img.save(buf, format='JPEG')
             buf.seek(0)
             
-            files = {'file': ('test_red_image.jpg', buf, 'image/jpeg')}
+            files = {'file': ('test_red_image_en.jpg', buf, 'image/jpeg')}
             data = {'language': 'en'}
             
             success, response = self.run_test(
-                "File Upload & Analysis",
+                "File Upload & Analysis (English)",
                 "POST",
                 "analysis/upload",
                 200,
@@ -205,10 +205,91 @@ class DeepfakeDetectorAPITester:
             )
             
             if success:
-                self.analysis_id = response.get('id')
-                print(f"   ✓ Analysis ID: {self.analysis_id}")
+                self.analysis_id_en = response.get('id')
+                details = response.get('details', {})
+                print(f"   ✓ Analysis ID: {self.analysis_id_en}")
                 print(f"   ✓ Verdict: {response.get('verdict')}")
                 print(f"   ✓ Confidence: {response.get('confidence')}%")
+                print(f"   ✓ Language: {response.get('language', 'N/A')}")
+                
+                # Check new fields from iteration 3
+                has_stages = bool(details.get('analysis_stages'))
+                has_forensic = bool(details.get('forensic_notes'))
+                has_format_info = bool(details.get('technical_details', {}).get('format_info'))
+                has_quality = bool(details.get('technical_details', {}).get('quality_assessment'))
+                
+                print(f"   ✓ Has analysis_stages: {has_stages}")
+                print(f"   ✓ Has forensic_notes: {has_forensic}")
+                print(f"   ✓ Has format_info: {has_format_info}")
+                print(f"   ✓ Has quality_assessment: {has_quality}")
+                
+                # Verify English text
+                summary = details.get('summary', '')
+                is_english = any(word in summary.lower() for word in ['the', 'and', 'is', 'analysis', 'image']) if summary else False
+                print(f"   ✓ Summary appears to be in English: {is_english}")
+            
+            return success
+                
+        except Exception as e:
+            print(f"   ❌ Exception during file upload: {str(e)}")
+            return False
+
+    def test_file_upload_analysis_arabic(self):
+        """Test file upload and analysis with Arabic language"""
+        try:
+            # Create a proper test image using PIL
+            from PIL import Image
+            import io
+            
+            # Create a simple blue image
+            img = Image.new('RGB', (100, 100), color='blue')
+            buf = io.BytesIO()
+            img.save(buf, format='JPEG')
+            buf.seek(0)
+            
+            files = {'file': ('test_blue_image_ar.jpg', buf, 'image/jpeg')}
+            data = {'language': 'ar'}
+            
+            success, response = self.run_test(
+                "File Upload & Analysis (Arabic)",
+                "POST",
+                "analysis/upload",
+                200,
+                data=data,
+                files=files
+            )
+            
+            if success:
+                self.analysis_id_ar = response.get('id')
+                details = response.get('details', {})
+                print(f"   ✓ Analysis ID: {self.analysis_id_ar}")
+                print(f"   ✓ Verdict: {response.get('verdict')}")
+                print(f"   ✓ Confidence: {response.get('confidence')}%")
+                print(f"   ✓ Language: {response.get('language', 'N/A')}")
+                
+                # Check new fields from iteration 3
+                has_stages = bool(details.get('analysis_stages'))
+                has_forensic = bool(details.get('forensic_notes'))
+                has_format_info = bool(details.get('technical_details', {}).get('format_info'))
+                has_quality = bool(details.get('technical_details', {}).get('quality_assessment'))
+                
+                print(f"   ✓ Has analysis_stages: {has_stages}")
+                print(f"   ✓ Has forensic_notes: {has_forensic}")
+                print(f"   ✓ Has format_info: {has_format_info}")
+                print(f"   ✓ Has quality_assessment: {has_quality}")
+                
+                # Verify Arabic text (basic check for Arabic characters)
+                summary = details.get('summary', '')
+                recommendation = details.get('recommendation', '')
+                has_arabic_chars = any('\u0600' <= char <= '\u06FF' for char in summary + recommendation)
+                print(f"   ✓ Response contains Arabic characters: {has_arabic_chars}")
+                
+                # Sample some fields for Arabic content verification
+                if details.get('indicators'):
+                    first_indicator = details['indicators'][0] if details['indicators'] else {}
+                    ind_name = first_indicator.get('name', '')
+                    has_arabic_indicators = any('\u0600' <= char <= '\u06FF' for char in ind_name)
+                    print(f"   ✓ Indicators contain Arabic text: {has_arabic_indicators}")
             
             return success
                 
