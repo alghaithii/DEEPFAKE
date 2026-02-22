@@ -11,13 +11,21 @@ import { toast } from 'sonner';
 const analysisStages = {
   en: [
     { key: 'upload', label: 'Uploading File', icon: Upload },
-    { key: 'metadata', label: 'Metadata Extraction', icon: Fingerprint },
-    { key: 'structure', label: 'Structural Analysis', icon: Activity },
-    { key: 'ai', label: 'AI Pattern Detection', icon: Eye },
-    { key: 'verdict', label: 'Generating Verdict', icon: Shield },
+    { key: 'observe', label: 'Pass 1: Deep Observation', icon: Eye },
+    { key: 'metadata', label: 'Metadata & Texture Analysis', icon: Fingerprint },
+    { key: 'structure', label: 'Structural & Geometry Check', icon: Activity },
+    { key: 'ai', label: 'Pass 2: AI Forensic Detection', icon: Waves },
+    { key: 'verdict', label: 'Cross-Referencing & Final Verdict', icon: Shield },
   ],
   ar: [
     { key: 'upload', label: 'رفع الملف', icon: Upload },
+    { key: 'observe', label: 'المرحلة 1: الملاحظة العميقة', icon: Eye },
+    { key: 'metadata', label: 'تحليل البيانات الوصفية والنسيج', icon: Fingerprint },
+    { key: 'structure', label: 'فحص الهيكل والهندسة', icon: Activity },
+    { key: 'ai', label: 'المرحلة 2: الكشف الجنائي بالذكاء الاصطناعي', icon: Waves },
+    { key: 'verdict', label: 'المراجعة المتقاطعة والحكم النهائي', icon: Shield },
+  ],
+};
     { key: 'metadata', label: 'استخراج البيانات الوصفية', icon: Fingerprint },
     { key: 'structure', label: 'التحليل الهيكلي', icon: Activity },
     { key: 'ai', label: 'كشف أنماط الذكاء الاصطناعي', icon: Eye },
