@@ -153,112 +153,187 @@ def detect_file_type(filename: str) -> str:
         return 'audio'
     return 'unknown'
 
+async def run_analysis_pass(file_path: str, file_type: str, filename: str, mime_type: str, system_msg: str, user_msg_text: str) -> str:
+    """Run a single analysis pass with Gemini"""
+    chat = LlmChat(
+        api_key=GEMINI_API_KEY,
+        session_id=f"analysis-{uuid.uuid4()}",
+        system_message=system_msg
+    ).with_model("gemini", "gemini-2.0-flash")
+
+    file_content = FileContentWithMimeType(file_path=file_path, mime_type=mime_type)
+    user_msg = UserMessage(text=user_msg_text, file_contents=[file_content])
+    response = await chat.send_message(user_msg)
+    return str(response)
+
+
 async def analyze_with_gemini(file_path: str, file_type: str, filename: str, language: str = "en") -> dict:
-    """Analyze a file using Gemini to detect if it's fake/AI-generated"""
+    """Multi-pass forensic analysis for maximum accuracy"""
     try:
+        mime_type = get_mime_type(file_type, filename)
+
         if language == "ar":
-            lang_instruction = """CRITICAL LANGUAGE RULE: You MUST write ALL text values in the JSON response in Arabic (العربية). 
-Every single string value - summary, indicator names, descriptions, findings, forensic notes, recommendations - MUST be in Arabic. 
-The JSON keys remain in English but ALL values must be Arabic text. This is mandatory. Do not use English for any text value."""
+            lang_instruction = """CRITICAL LANGUAGE RULE: ALL text values in the JSON MUST be in Arabic (العربية). Keys stay English, values MUST be Arabic."""
         else:
-            lang_instruction = "All text values in the JSON response must be in English."
+            lang_instruction = "All text values must be in English."
 
-        system_prompt = f"""You are a world-class digital forensics expert specializing in deepfake detection and media authenticity verification. You work at a leading digital forensics laboratory.
-
-CRITICAL ACCURACY RULES:
-- You must be HIGHLY ACCURATE. Do NOT flag authentic content as fake.
-- Real-world media (photos from phones, real voice recordings, natural videos) should be classified as "authentic" unless there are CLEAR, SPECIFIC signs of manipulation.
-- Compression artifacts, slight noise, or format conversion artifacts are NORMAL in real media - they are NOT signs of fakery.
-- Audio recorded from microphones naturally has background noise, slight variations in pitch, and breathing sounds - these are signs of AUTHENTICITY, not fakery.
-- Only flag as "suspicious" or "likely_fake" when you find CONCRETE evidence of manipulation such as:
-  * For images: clear GAN artifacts (grid patterns), impossible geometry, inconsistent lighting physics, clone stamping, splicing boundaries, warped text
-  * For video: temporal flickering between frames, face-swap boundary artifacts, lip-sync desynchronization, unnatural head movement physics
-  * For audio: robotic pitch uniformity, unnatural spectral gaps, TTS synthesis markers, voice cloning concatenation artifacts, impossible breathing patterns
-- When in doubt, lean toward "authentic" with moderate confidence rather than false positives.
+        # ===== PASS 1: OBSERVATION (neutral, no bias) =====
+        pass1_system = f"""You are a visual/audio forensic observer. Your ONLY job is to describe what you see/hear in extreme detail.
+Do NOT make any judgment about authenticity. Just observe and report factual observations.
 
 {lang_instruction}
 
-You MUST respond with ONLY a valid JSON object (no markdown, no code blocks) with this EXACT structure:
+Respond with ONLY a JSON object:
+{{
+    "visual_observations": "extremely detailed description of what you observe",
+    "anomalies_detected": ["list every single anomaly, inconsistency, or unusual pattern you notice - be exhaustive"],
+    "texture_analysis": "describe texture patterns, smoothness, grain, noise characteristics",
+    "geometry_analysis": "describe geometric consistency - proportions, symmetry, perspective, edges",
+    "lighting_analysis": "describe lighting direction, shadows, reflections, highlights consistency",
+    "detail_analysis": "describe fine details - fingers, hair, text, background elements, transitions"
+}}"""
+
+        pass1_user = {
+            'image': f"Examine this image '{filename}' with extreme attention to detail. Describe EVERYTHING you see - textures, edges, lighting, shadows, proportions, fine details like fingers/hair/text/reflections. Report ANY anomaly no matter how minor.",
+            'video': f"Examine this video '{filename}' frame by frame. Describe visual consistency, motion smoothness, facial movements, lip sync, temporal coherence. Report ANY anomaly.",
+            'audio': f"Examine this audio '{filename}' with extreme attention. Describe voice characteristics, pitch patterns, breathing, background noise, transitions, spectral quality. Report ANY anomaly."
+        }
+
+        # ===== PASS 2: FORENSIC VERDICT (informed by observations) =====
+        pass2_system = f"""You are the world's leading deepfake forensic analyst. You have caught thousands of AI-generated and manipulated media files.
+
+YOUR ANALYSIS MUST BE BALANCED AND PRECISE:
+- Do NOT have a bias toward "authentic" OR "fake" - be completely neutral
+- Base your verdict SOLELY on the forensic evidence
+- AI-generated images (DALL-E, Midjourney, Stable Diffusion, Flux) often look photorealistic but have subtle tells
+- Real photos have organic imperfections; AI images have SYNTHETIC perfection with subtle breaks
+
+CRITICAL AI-GENERATED IMAGE INDICATORS (check ALL):
+1. SKIN TEXTURE: AI skin is often TOO smooth, waxy, or plasticky. Real skin has pores, fine lines, blemishes
+2. HANDS/FINGERS: AI frequently generates wrong number of fingers, merged fingers, impossible joint angles, missing fingernails
+3. HAIR: AI hair often has unnatural flow, merged strands, hair that defies physics, blurry hair boundaries
+4. EYES: AI eyes may have different sizes, asymmetric reflections, impossible catch-lights, merged iris patterns
+5. TEETH: AI teeth are often too perfect, uniform, or have blurred edges
+6. TEXT/WRITING: AI-generated text in images is usually garbled, misspelled, or geometrically inconsistent
+7. BACKGROUND: AI backgrounds may have impossible architecture, warped lines, inconsistent perspective, repeating patterns
+8. EDGES/BOUNDARIES: Look for unnatural blending between subject and background, halo effects
+9. SYMMETRY: AI faces can be unnaturally symmetrical; real faces have natural asymmetry
+10. LIGHTING: AI may have inconsistent shadow directions, impossible reflections, or flat lighting
+11. ACCESSORIES: Glasses, jewelry, earrings - AI often gets these wrong with asymmetry or impossible geometry
+12. OVERALL "TOO PERFECT" LOOK: If the image looks like a magazine photo but has subtle impossible details, it's likely AI
+
+CRITICAL DEEPFAKE VIDEO INDICATORS:
+1. Face boundary flickering or warping
+2. Inconsistent skin tone between face and neck/body
+3. Lip movement not matching audio
+4. Unnatural blinking patterns
+5. Hair movement inconsistencies
+
+CRITICAL SYNTHETIC AUDIO INDICATORS:
+1. Unnaturally uniform pitch (real voices fluctuate)
+2. Missing micro-pauses and breath sounds
+3. Metallic or robotic undertone
+4. Spectral gaps or too-clean frequency response
+5. Concatenation artifacts (sudden quality changes)
+
+{lang_instruction}
+
+Respond with ONLY a valid JSON object:
 {{
     "verdict": "authentic" or "suspicious" or "likely_fake",
-    "confidence": number between 0 and 100,
-    "summary": "Comprehensive assessment of the file's authenticity",
+    "confidence": number 0-100 (be precise - 50 means truly uncertain),
+    "summary": "comprehensive assessment explaining WHY you reached this verdict with specific evidence",
     "analysis_stages": [
         {{
-            "stage": "stage name (e.g., Metadata Analysis, Structural Analysis, AI Pattern Detection, Spectral Analysis)",
+            "stage": "stage name",
             "status": "pass" or "warning" or "fail",
-            "finding": "what was found in this stage"
+            "finding": "specific finding with evidence"
         }}
     ],
     "indicators": [
         {{
             "name": "indicator name",
-            "description": "detailed description of finding",
+            "description": "detailed evidence-based description",
             "severity": "low" or "medium" or "high",
             "category": "metadata" or "structural" or "ai_pattern" or "temporal" or "spectral" or "behavioral"
         }}
     ],
     "technical_details": {{
-        "artifacts_found": ["list of specific artifacts"],
+        "artifacts_found": ["specific artifacts with locations"],
         "consistency_score": number 0-100,
-        "metadata_analysis": "detailed metadata findings",
-        "format_info": "file format and encoding details",
-        "quality_assessment": "quality and compression analysis"
+        "metadata_analysis": "metadata findings",
+        "format_info": "format and encoding details",
+        "quality_assessment": "quality analysis"
     }},
-    "forensic_notes": "detailed technical forensic observations for experts",
-    "recommendation": "clear actionable recommendation for the user"
-}}
+    "forensic_notes": "expert-level technical observations - be very specific about what evidence supports your verdict",
+    "recommendation": "actionable recommendation"
+}}"""
 
-ANALYSIS METHODOLOGY by file type:
-- For images: Check EXIF metadata integrity, Error Level Analysis patterns, noise consistency, lighting physics, edge coherence, facial geometry, texture frequency analysis, compression artifact patterns
-- For video: Frame-by-frame temporal consistency, motion flow analysis, audio-visual synchronization, codec artifact analysis, temporal noise patterns, facial landmark tracking consistency
-- For audio: Spectral analysis across frequency bands, pitch contour naturalness, formant transition smoothness, background noise consistency, energy envelope analysis, voice quality metrics"""
-
-        chat = LlmChat(
-            api_key=GEMINI_API_KEY,
-            session_id=f"analysis-{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("gemini", "gemini-2.0-flash")
-
-        mime_type = get_mime_type(file_type, filename)
-        file_content = FileContentWithMimeType(file_path=file_path, mime_type=mime_type)
-
-        analysis_instruction = {
-            'image': f"Perform a comprehensive forensic analysis of this image file '{filename}'. Examine metadata, pixel-level patterns, structural consistency, and AI generation markers. Be accurate - do not flag natural photos as fake.",
-            'video': f"Perform a comprehensive forensic analysis of this video file '{filename}'. Examine temporal consistency, frame coherence, audio-visual sync, and deepfake markers. Be accurate - do not flag natural recordings as fake.",
-            'audio': f"Perform a comprehensive forensic analysis of this audio file '{filename}'. Examine spectral patterns, pitch naturalness, voice characteristics, background noise consistency, and synthesis markers. Be accurate - real recordings have natural imperfections like breathing, pauses, and ambient noise which are signs of authenticity."
+        pass2_user = {
+            'image': "Based on the observations from Pass 1, now render your forensic verdict. Examine EVERY indicator on the checklist. If you find even 2-3 AI indicators, classify as 'suspicious' or 'likely_fake'. Be thorough and honest.",
+            'video': "Based on the observations from Pass 1, now render your forensic verdict on this video. Check every deepfake indicator. Be thorough.",
+            'audio': "Based on the observations from Pass 1, now render your forensic verdict on this audio. Check every synthetic audio indicator. Be thorough."
         }
 
-        user_msg = UserMessage(
-            text=analysis_instruction.get(file_type, f"Analyze this {file_type} file for authenticity."),
-            file_contents=[file_content]
+        # Execute Pass 1
+        logger.info(f"Analysis Pass 1: Observation for {filename}")
+        pass1_response = await run_analysis_pass(
+            file_path, file_type, filename, mime_type,
+            pass1_system,
+            pass1_user.get(file_type, f"Observe this {file_type} in extreme detail.")
         )
 
-        response = await chat.send_message(user_msg)
-        response_text = str(response)
+        # Clean pass1 response
+        p1_text = pass1_response
+        if '```json' in p1_text:
+            p1_text = p1_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in p1_text:
+            p1_text = p1_text.split('```')[1].split('```')[0].strip()
 
-        # Clean markdown code blocks if present
-        if '```json' in response_text:
-            response_text = response_text.split('```json')[1].split('```')[0].strip()
-        elif '```' in response_text:
-            response_text = response_text.split('```')[1].split('```')[0].strip()
+        try:
+            observations = json.loads(p1_text)
+        except json.JSONDecodeError:
+            observations = {"visual_observations": p1_text, "anomalies_detected": []}
 
-        result = json.loads(response_text)
-        
+        # Execute Pass 2 with observations context
+        logger.info(f"Analysis Pass 2: Forensic verdict for {filename}")
+        observation_summary = json.dumps(observations, ensure_ascii=False)[:3000]
+
+        # Build pass2 with combined context
+        combined_pass2_system = pass2_system + f"\n\nOBSERVATIONS FROM PASS 1 (use these as input for your analysis):\n{observation_summary}"
+
+        pass2_response = await run_analysis_pass(
+            file_path, file_type, filename, mime_type,
+            combined_pass2_system,
+            pass2_user.get(file_type, f"Render your forensic verdict on this {file_type}.")
+        )
+
+        # Parse pass2 response
+        p2_text = pass2_response
+        if '```json' in p2_text:
+            p2_text = p2_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in p2_text:
+            p2_text = p2_text.split('```')[1].split('```')[0].strip()
+
+        result = json.loads(p2_text)
+
         # Ensure all required fields exist
         result.setdefault("analysis_stages", [])
         result.setdefault("forensic_notes", "")
         result.setdefault("indicators", [])
         result.setdefault("technical_details", {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "N/A", "format_info": "N/A", "quality_assessment": "N/A"})
-        
+
+        # Add pass 1 observations to technical details for transparency
+        result["technical_details"]["raw_observations"] = observations.get("anomalies_detected", [])
+
         return result
 
     except json.JSONDecodeError as e:
-        logger.error(f"JSON parse error: {e}, response: {response_text[:500] if 'response_text' in dir() else 'N/A'}")
+        logger.error(f"JSON parse error: {e}")
         return {
             "verdict": "suspicious",
             "confidence": 50,
-            "summary": "تعذر تحليل النتائج بالكامل. يُنصح بالمراجعة اليدوية." if language == "ar" else "Analysis completed but results could not be fully parsed. Manual review recommended.",
+            "summary": "تعذر تحليل النتائج بالكامل. يُنصح بالمراجعة اليدوية." if language == "ar" else "Analysis partially completed. Manual review recommended.",
             "analysis_stages": [{"stage": "AI Analysis", "status": "warning", "finding": "Partial results"}],
             "indicators": [{"name": "Parse Error", "description": "AI response format issue", "severity": "low", "category": "metadata"}],
             "technical_details": {"artifacts_found": [], "consistency_score": 50, "metadata_analysis": "Partial", "format_info": "N/A", "quality_assessment": "N/A"},
