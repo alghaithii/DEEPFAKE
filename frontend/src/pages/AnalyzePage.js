@@ -197,8 +197,23 @@ export default function AnalyzePage() {
             <input {...getInputProps()} data-testid="file-input" />
             {file ? (
               <div className="space-y-4">
-                {preview && <div className="mx-auto w-48 h-48 rounded-xl overflow-hidden border border-[#DADAD5]"><img src={preview} alt="Preview" className="w-full h-full object-cover" /></div>}
-                {!preview && <div className="mx-auto w-20 h-20 rounded-2xl bg-[#F5F5F0] flex items-center justify-center text-[#575752]">{getFileIcon()}</div>}
+                {preview && file.type.startsWith('image/') && <div className="mx-auto w-48 h-48 rounded-xl overflow-hidden border border-[#DADAD5]"><img src={preview} alt="Preview" className="w-full h-full object-cover" /></div>}
+                {preview && file.type.startsWith('video/') && (
+                  <div className="mx-auto w-64 h-40 rounded-xl overflow-hidden border border-[#DADAD5] relative">
+                    <img src={preview} alt="Video thumbnail" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center"><Video className="w-6 h-6 text-[#1A1A18]" /></div>
+                    </div>
+                  </div>
+                )}
+                {!preview && file.type.startsWith('audio/') && (
+                  <div className="mx-auto w-48 h-24 rounded-xl bg-[#1A1A18] flex items-center justify-center gap-1">
+                    {[...Array(12)].map((_, i) => (
+                      <div key={i} className="w-1.5 rounded-full bg-[#C05621]" style={{ height: `${12 + Math.random() * 36}px`, opacity: 0.5 + Math.random() * 0.5 }} />
+                    ))}
+                  </div>
+                )}
+                {!preview && !file.type.startsWith('audio/') && <div className="mx-auto w-20 h-20 rounded-2xl bg-[#F5F5F0] flex items-center justify-center text-[#575752]">{getFileIcon()}</div>}
                 <div><p className="text-sm font-medium text-[#1A1A18]">{file.name}</p><p className="text-xs text-[#858580] mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p></div>
                 <button onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); }} className="inline-flex items-center gap-1 text-xs text-[#858580] hover:text-[#C53030]" data-testid="remove-file-btn"><X className="w-3 h-3" /> {lang === 'ar' ? 'إزالة' : 'Remove'}</button>
               </div>
