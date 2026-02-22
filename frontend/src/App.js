@@ -49,6 +49,7 @@ function AppRoutes() {
       <Route path="/analysis/:id" element={<ProtectedRoute><AppLayout><AnalysisDetailPage /></AppLayout></ProtectedRoute>} />
       <Route path="/compare" element={<ProtectedRoute><AppLayout><ComparePage /></AppLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/shared/:shareId" element={<SharedAnalysisPage />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
