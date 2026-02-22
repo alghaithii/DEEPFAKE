@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Shield, ShieldAlert, ShieldQuestion, ArrowLeft, Download, Trash2, FileText, CheckCircle, AlertTriangle, XCircle, Fingerprint } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldQuestion, ArrowLeft, Download, Trash2, FileText, CheckCircle, AlertTriangle, XCircle, Fingerprint, Eye } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
