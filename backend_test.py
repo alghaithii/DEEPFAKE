@@ -592,6 +592,14 @@ class DeepfakeDetectorAPITester:
             self.test_file_upload_analysis_arabic,
             self.test_get_specific_analysis_english,
             self.test_get_specific_analysis_arabic,
+            # NEW iteration 4 tests
+            self.test_url_analysis,
+            self.test_annotations_in_analysis,
+            self.test_preview_field_in_analysis,
+            self.test_create_share_link,
+            self.test_get_shared_analysis,
+            self.test_get_own_shared_analysis,
+            # PDF and other tests
             self.test_generate_pdf_report_english,
             self.test_generate_pdf_report_arabic,
             self.test_compare_analyses,
