@@ -776,6 +776,13 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
         [vd_label, verdict_labels.get(verdict, verdict)],
         [cf_label, f"{analysis.get('confidence', 0)}%"]
     ]
+    # Add duration for video/audio
+    media_dur = analysis.get("media_duration")
+    if media_dur:
+        dur_label = shape_ar("المدة") if is_arabic else "Duration"
+        mins = int(media_dur // 60)
+        secs = int(media_dur % 60)
+        info_data.append([dur_label, f"{mins}:{secs:02d}"])
     info_table = Table(info_data, colWidths=[150, 350])
     info_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F5F5F0')),
