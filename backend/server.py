@@ -325,8 +325,7 @@ async def delete_analysis(analysis_id: str, user: dict = Depends(get_current_use
     return {"message": "Analysis deleted"}
 
 @api_router.post("/analysis/compare")
-async def compare_analyses(data: CompareRequest, authorization: str = ""):
-    user = await get_current_user(authorization)
+async def compare_analyses(data: CompareRequest, user: dict = Depends(get_current_user)):
     analyses = []
     for aid in data.analysis_ids:
         a = await db.analyses.find_one({"id": aid, "user_id": user["id"]}, {"_id": 0})
