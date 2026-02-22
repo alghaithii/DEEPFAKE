@@ -291,8 +291,7 @@ async def get_history(limit: int = 50, skip: int = 0, user: dict = Depends(get_c
     return {"analyses": analyses, "total": total}
 
 @api_router.get("/analysis/stats")
-async def get_stats(authorization: str = ""):
-    user = await get_current_user(authorization)
+async def get_stats(user: dict = Depends(get_current_user)):
     total = await db.analyses.count_documents({"user_id": user["id"]})
     authentic = await db.analyses.count_documents({"user_id": user["id"], "verdict": "authentic"})
     suspicious = await db.analyses.count_documents({"user_id": user["id"], "verdict": "suspicious"})
