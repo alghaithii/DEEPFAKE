@@ -790,6 +790,53 @@ async def generate_report(analysis_id: str, user: dict = Depends(get_current_use
 
     details = analysis.get("details", {})
 
+    # Add annotated image/preview to PDF
+    preview_data = analysis.get("preview")
+    preview_type = analysis.get("preview_type", "image")
+    if preview_data:
+        try:
+            img_bytes = base64.b64decode(preview_data)
+            pil_img = PILImage.open(io.BytesIO(img_bytes)).convert('RGB')
+
+            # Draw annotation markers on the image for image type
+            annotations = details.get("annotations", [])
+            if annotations and analysis.get("file_type") == "image":
+                draw_img = ImageDraw.Draw(pil_img)
+                w, h = pil_img.size
+                region_coords = {
+                    'top-left': (0.15, 0.10), 'top-center': (0.50, 0.10), 'top-right': (0.85, 0.10),
+                    'center-left': (0.15, 0.50), 'center': (0.50, 0.50), 'center-right': (0.85, 0.50),
+                    'bottom-left': (0.15, 0.85), 'bottom-center': (0.50, 0.85), 'bottom-right': (0.85, 0.85),
+                }
+                sev_colors = {'high': (197, 48, 48), 'medium': (192, 86, 33), 'low': (47, 133, 90)}
+                for idx, ann in enumerate(annotations):
+                    rx, ry = region_coords.get(ann.get('region', 'center'), (0.5, 0.5))
+                    cx, cy = int(rx * w), int(ry * h)
+                    r = max(12, min(w, h) // 25)
+                    c = sev_colors.get(ann.get('severity', 'low'), (47, 133, 90))
+                    # Draw filled circle with border
+                    draw_img.ellipse([cx - r, cy - r, cx + r, cy + r], fill=c, outline=(255, 255, 255), width=2)
+                    # Draw number
+                    draw_img.text((cx - 4, cy - 6), str(idx + 1), fill=(255, 255, 255))
+
+            # Resize for PDF
+            max_w = 450
+            ratio = max_w / pil_img.width
+            new_h = int(pil_img.height * ratio)
+            pil_img = pil_img.resize((max_w, new_h), PILImage.LANCZOS)
+
+            img_buffer = io.BytesIO()
+            pil_img.save(img_buffer, format='JPEG', quality=85)
+            img_buffer.seek(0)
+
+            preview_title = shape_ar("المعاينة مع التعليقات التوضيحية") if is_arabic else "Preview with Annotations"
+            elements.append(Paragraph(preview_title, heading_ar))
+            elements.append(Spacer(1, 6))
+            elements.append(RLImage(img_buffer, width=max_w, height=new_h))
+            elements.append(Spacer(1, 15))
+        except Exception as e:
+            logger.warning(f"Failed to add image to PDF: {e}")
+
     # Summary
     summary_title = shape_ar("الملخص") if is_arabic else "Summary"
     elements.append(Paragraph(summary_title, heading_ar))
